@@ -19,7 +19,7 @@ ${chalk.cyan('╚═════════════════════
 program
     .name('ralphy-skills')
     .description('Universal Skills loader for AI Coding Agents')
-    .version('1.1.0')
+    .version('2.0.0')
     .hook('preAction', () => {
         console.log(banner);
     });
