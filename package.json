@@ -31,9 +31,11 @@
     "dependencies": {
         "chalk": "^4.1.2",
         "commander": "^11.1.0",
-        "gray-matter": "^4.0.3"
+        "gray-matter": "^4.0.3",
+        "inquirer": "^9.3.8"
     },
     "devDependencies": {
+        "@types/inquirer": "^9.0.9",
         "@types/node": "^20.0.0",
         "typescript": "^5.0.0"
     },

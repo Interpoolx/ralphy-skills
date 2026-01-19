@@ -4,6 +4,14 @@ import * as os from 'os';
 import chalk from 'chalk';
 import { findSkill, loadRegistry, isSkillInstalled } from '../utils/registry';
 import { installSkillFromUrl, parseGitHubUrl } from '../utils/downloader';
+import { 
+    parseGitHubAuthUrl, 
+    loadGitHubToken, 
+    promptForGitAuth, 
+    setupGitEnvironment,
+    GitAuthOptions,
+    PrivateRepoConfig
+} from '../utils/git-auth';
 
 interface InstallOptions {
     dir?: string;
@@ -12,6 +20,9 @@ interface InstallOptions {
     global?: boolean;
     symlink?: boolean;
     yes?: boolean;
+    token?: string;
+    sshKey?: string;
+    private?: boolean;
 }
 
 /**
@@ -68,14 +79,39 @@ async function installFromLocal(localPath: string, skillsDir: string, options: I
 }
 
 async function installFromUrl(url: string, skillsDir: string, options: InstallOptions) {
+    let auth: GitAuthOptions | undefined;
+    
+    // Check if this is a private repository
+    const isPrivateRepo = options.private || 
+                          url.includes('.git') || 
+                          url.includes('private') || 
+                          url.includes('git@') ||
+                          !loadGitHubToken(); // No public token available
+
+    if (isPrivateRepo) {
+        // Get authentication credentials
+        const credentials = await getAuthCredentials(url, options);
+        if (!credentials) {
+            console.log(chalk.red('\n❌ Authentication required for private repository'));
+            process.exit(1);
+        }
+        auth = credentials;
+    }
+
     const parsed = parseGitHubUrl(url);
     if (!parsed) {
         console.log(chalk.red('✗ Invalid GitHub URL'));
         process.exit(1);
     }
+    
     const folderName = generateFolderName(parsed.owner, parsed.repo, parsed.pathInRepo);
 
     console.log(chalk.gray(`Installing from URL: ${url}`));
+
+    // Setup authentication if provided
+    if (auth) {
+        setupGitEnvironment(auth);
+    }
 
     const result = await installSkillFromUrl(url, folderName, path.dirname(skillsDir), {
         cursor: options.cursor,
@@ -91,11 +127,23 @@ async function installFromRegistry(name: string, skillsDir: string, options: Ins
 
     if (!skill) {
         console.log(chalk.red(`✗ Skill "${name}" not found in registry`));
+        console.log(chalk.gray('Try searching with: npx ralphy-skills search <query>'));
         process.exit(1);
     }
 
     console.log(chalk.gray(`Found: ${skill.name}`));
     console.log(chalk.gray(`Installing from: ${skill.url}`));
+
+    // Check if the registry skill URL requires authentication
+    let auth: GitAuthOptions | undefined;
+    if (skill.url.includes('github.com') && (skill.url.includes('.git') || skill.url.includes('private'))) {
+        const credentials = await getAuthCredentials(skill.url, options);
+        auth = credentials || undefined;
+    }
+
+    if (auth) {
+        setupGitEnvironment(auth);
+    }
 
     await installSkillFromUrl(skill.url, skill.folder_name, path.dirname(skillsDir), {
         cursor: options.cursor,
@@ -103,6 +151,26 @@ async function installFromRegistry(name: string, skillsDir: string, options: Ins
     });
 
     console.log(chalk.green(`\n✅ Installed: ${skill.name}`));
+}
+
+async function getAuthCredentials(url: string, options: InstallOptions): Promise<GitAuthOptions | null> {
+    // If credentials provided via options, use them
+    if (options.token || options.sshKey) {
+        return {
+            token: options.token,
+            sshKey: options.sshKey
+        };
+    }
+
+    // Try to load existing GitHub token
+    const existingToken = loadGitHubToken();
+    if (existingToken && !options.private) {
+        return { token: existingToken };
+    }
+
+    // Prompt user for credentials
+    console.log(chalk.yellow('\n🔐 Private repository detected - authentication required'));
+    return await promptForGitAuth();
 }
 
 /**
