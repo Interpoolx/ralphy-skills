@@ -1,0 +1,7 @@
+name = "ralphy-skills-web"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# Enable SPA routing fallback
+[pages]
+    fallback_html = "index.html"
