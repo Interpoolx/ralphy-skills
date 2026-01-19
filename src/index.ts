@@ -112,4 +112,31 @@ program
         await searchSkills(query, options);
     });
 
+program
+    .command('create [name]')
+    .description('Create a new skill from template')
+    .action(async (name?: string) => {
+        const { createSkill } = await import('./commands/create');
+        await createSkill(name);
+    });
+
+program
+    .command('validate [path]')
+    .description('Validate skill format and structure')
+    .option('--strict', 'Strict validation mode')
+    .option('--fix', 'Auto-fix issues where possible')
+    .action(async (skillPath?: string, options?: any) => {
+        const { validateSkill } = await import('./commands/validate');
+        await validateSkill(skillPath, options);
+    });
+
+program
+    .command('serve')
+    .description('Start web-based skills browser')
+    .option('-p, --port <port>', 'Port number', '3000')
+    .action(async (options) => {
+        const { startApiServer } = await import('./server/api');
+        await startApiServer(parseInt(options.port));
+    });
+
 program.parse();
