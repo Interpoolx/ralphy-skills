@@ -1,7 +1,7 @@
 {
     "name": "ralphy-skills",
-    "version": "1.1.0",
-    "description": "Universal Skills loader for AI Coding Agents. Install and manage AI agent skills from the terminal.",
+    "version": "2.0.0",
+    "description": "Universal Skills Marketplace for AI Coding Agents. Browse, install, and manage AI agent skills with CLI and web interface.",
     "keywords": [
         "ai",
         "skills",
@@ -10,23 +10,43 @@
         "vscode",
         "copilot",
         "claude",
-        "antigravity",
-        "rules"
+        "windsurf",
+        "aider",
+        "marketplace",
+        "cli",
+        "web-browser",
+        "skill-manager",
+        "ai-tools",
+        "developer-tools"
     ],
-    "author": "Ralphysh",
+    "author": "Ralphysh <hello@ralphy.sh> (https://ralphy.sh)",
+    "homepage": "https://github.com/Interpoolx/ralphy-skills#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Interpoolx/ralphy-skills.git"
+    },
+    "bugs": {
+        "url": "https://github.com/Interpoolx/ralphy-skills/issues"
+    },
     "license": "MIT",
     "bin": {
         "ralphy-skills": "./dist/index.js"
     },
     "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "files": [
         "dist",
         "data",
-        "README.md"
+        "README.md",
+        "LICENSE",
+        "marketplace.json"
     ],
     "scripts": {
         "build": "tsc",
-        "start": "node dist/index.js"
+        "start": "node dist/index.js",
+        "prepublishOnly": "npm run build",
+        "test": "echo \"Tests will be added soon\" && exit 0",
+        "serve": "npm run build && node dist/index.js serve"
     },
     "dependencies": {
         "chalk": "^4.1.2",
