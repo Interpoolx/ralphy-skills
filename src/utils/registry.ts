@@ -13,12 +13,10 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
  * Get the path to the bundled skills registry (fallback).
+ * Single source of truth: root recommended_skills.json
  */
 function getBundledRegistryPath(): string {
-    const bundledPath = path.join(__dirname, '..', '..', 'data', REGISTRY_FILENAME);
-    if (fs.existsSync(bundledPath)) return bundledPath;
-
-    const repoPath = path.join(__dirname, '..', '..', '..', REGISTRY_FILENAME);
+    const repoPath = path.join(__dirname, '..', '..', REGISTRY_FILENAME);
     if (fs.existsSync(repoPath)) return repoPath;
 
     return '';

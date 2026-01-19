@@ -149,8 +149,20 @@ async function loadMarketplace() {
   if (grid) grid.innerHTML = '<div class="loading">Loading marketplace...</div>';
 
   try {
-    const response = await fetch('./marketplace.json', { cache: 'no-cache' });
-    if (!response.ok) throw new Error(`Failed to fetch marketplace.json: ${response.status}`);
+    // Fetch from GitHub raw URL (single source of truth)
+    const githubUrl = 'https://raw.githubusercontent.com/Interpoolx/ralphy-skills/main/marketplace.json';
+    const localUrl = './marketplace.json';
+    
+    // Try GitHub first, fallback to local copy if it exists (for local development)
+    let response;
+    try {
+      response = await fetch(githubUrl, { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`GitHub fetch failed: ${response.status}`);
+    } catch (e) {
+      console.warn('GitHub fetch failed, trying local fallback:', e);
+      response = await fetch(localUrl, { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`Local fetch failed: ${response.status}`);
+    }
 
     const marketplace = await response.json();
     allSkills = Array.isArray(marketplace.skills) ? marketplace.skills : [];
