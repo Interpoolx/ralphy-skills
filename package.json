@@ -36,10 +36,10 @@
     "types": "./dist/index.d.ts",
     "files": [
         "dist",
-        "data",
         "README.md",
         "LICENSE",
-        "marketplace.json"
+        "marketplace.json",
+        "recommended_skills.json"
     ],
     "scripts": {
         "build": "tsc",
