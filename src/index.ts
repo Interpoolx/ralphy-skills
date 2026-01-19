@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+
+import { Command } from 'commander';
+import chalk from 'chalk';
+import { installSkill } from './commands/install';
+import { listSkills } from './commands/list';
+import { updateSkills } from './commands/update';
+
+const program = new Command();
+
+// ASCII Art Banner
+const banner = `
+${chalk.cyan('╔═══════════════════════════════════════════════════════╗')}
+${chalk.cyan('║')}  ${chalk.bold.white('🚀 Ralphy Skills')} ${chalk.gray('- Universal Skills Loader')}          ${chalk.cyan('║')}
+${chalk.cyan('║')}  ${chalk.gray('   For AI Coding Agents (Cursor, VS Code, etc.)')}     ${chalk.cyan('║')}
+${chalk.cyan('╚═══════════════════════════════════════════════════════╝')}
+`;
+
+program
+    .name('ralphy-skills')
+    .description('Universal Skills loader for AI Coding Agents')
+    .version('1.1.0')
+    .hook('preAction', () => {
+        console.log(banner);
+    });
+
+program
+    .command('install <skill>')
+    .alias('i')
+    .description('Install a skill by name, URL, or local path')
+    .option('-d, --dir <directory>', 'Target directory', '.')
+    .option('-u, --universal', 'Install to .agent/skills/')
+    .option('-g, --global', 'Install to ~/.ralphy/skills/')
+    .option('-s, --symlink', 'Symlink local path instead of copying')
+    .option('--cursor', 'Also install to .cursor/rules')
+    .option('-y, --yes', 'Skip confirmation prompts')
+    .action(async (skill: string, options) => {
+        await installSkill(skill, options);
+    });
+
+program
+    .command('list')
+    .alias('ls')
+    .description('List installed skills (use -r for registry)')
+    .option('-r, --registry', 'Show available skills from registry')
+    .action(async (options) => {
+        await listSkills(options);
+    });
+
+program
+    .command('read <skill-names...>')
+    .description('Read skill content to stdout (for AI agents)')
+    .action(async (skillNames: string[]) => {
+        const { readSkills } = await import('./commands/read');
+        await readSkills(skillNames);
+    });
+
+program
+    .command('sync')
+    .description('Update AGENTS.md with installed skills')
+    .option('-y, --yes', 'Skip confirmation')
+    .option('-o, --output <path>', 'Output file path', 'AGENTS.md')
+    .action(async (options) => {
+        const { syncAgents } = await import('./commands/sync');
+        await syncAgents(options);
+    });
+
+program
+    .command('manage')
+    .description('Interactively manage installed skills')
+    .action(async () => {
+        const { manageSkills } = await import('./commands/remove');
+        await manageSkills();
+    });
+
+program
+    .command('remove <skill>')
+    .alias('rm')
+    .description('Remove a specific skill')
+    .action(async (skill: string) => {
+        const { removeSkill } = await import('./commands/remove');
+        await removeSkill(skill);
+    });
+
+program
+    .command('update')
+    .alias('up')
+    .description('Update all installed skills to latest versions')
+    .option('-s, --skill <name>', 'Update a specific skill only')
+    .action(async (options) => {
+        await updateSkills(options);
+    });
+
+program
+    .command('search <query>')
+    .description('Search for skills by name or description')
+    .action(async (query: string) => {
+        const { searchSkills } = await import('./commands/list');
+        await searchSkills(query);
+    });
+
+program.parse();

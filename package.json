@@ -1,0 +1,43 @@
+{
+    "name": "ralphy-skills",
+    "version": "1.1.0",
+    "description": "Universal Skills loader for AI Coding Agents. Install and manage AI agent skills from the terminal.",
+    "keywords": [
+        "ai",
+        "skills",
+        "agent",
+        "cursor",
+        "vscode",
+        "copilot",
+        "claude",
+        "antigravity",
+        "rules"
+    ],
+    "author": "Ralphysh",
+    "license": "MIT",
+    "bin": {
+        "ralphy-skills": "./dist/index.js"
+    },
+    "main": "./dist/index.js",
+    "files": [
+        "dist",
+        "data",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "commander": "^11.1.0",
+        "gray-matter": "^4.0.3"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "typescript": "^5.0.0"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    }
+}

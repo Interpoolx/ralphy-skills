@@ -1,0 +1,44 @@
+[
+    {
+        "id": "vercel-react-best-practices",
+        "name": "Vercel React Best Practices",
+        "url": "https://github.com/vercel-labs/agent-skills/tree/react-best-practices/skills/react-best-practices/references/rules",
+        "description": "Official React & Next.js coding standards from Vercel",
+        "folder_name": "vercel-react-best-practices"
+    },
+    {
+        "id": "convex-avoid-feature-creep",
+        "name": "Convex - Avoid Feature Creep",
+        "url": "https://github.com/waynesutton/convexskills/tree/main/skills/avoid-feature-creep",
+        "description": "Strategies to prevent scope creep and maintain project focus",
+        "folder_name": "convex-skills"
+    },
+    {
+        "id": "expo-app-design",
+        "name": "Expo App Design",
+        "url": "https://github.com/expo/skills/tree/main/plugins/expo-app-design/skills",
+        "description": "Expo App Design",
+        "folder_name": "expo-app-design"
+    },
+    {
+        "id": "cloudflare-agents-sdk",
+        "name": "Cloudflare Agents SDK",
+        "url": "https://github.com/cloudflare/skills/tree/main/agents-sdk",
+        "description": "Skills for building AI agents using Cloudflare's Agents SDK",
+        "folder_name": "cloudflare-agents-sdk"
+    },
+    {
+        "id": "cloudflare-mcp-server",
+        "name": "Cloudflare MCP Server",
+        "url": "https://github.com/cloudflare/skills/tree/main/building-mcp-server-on-cloudflare",
+        "description": "Instructions for building Model Context Protocol (MCP) servers on Cloudflare",
+        "folder_name": "cloudflare-mcp-server"
+    },
+    {
+        "id": "antigravity-kit",
+        "name": "Antigravity Kit",
+        "url": "https://github.com/vudovn/antigravity-kit/tree/main/.agent/skills",
+        "description": "Skills for building AI agents using Antigravity Kit",
+        "folder_name": "antigravity-kit"
+    }
+]

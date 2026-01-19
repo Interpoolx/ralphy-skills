@@ -1,0 +1,6 @@
+cd D:\react-projects\ralphy-skills
+git init
+git remote add origin https://github.com/Interpoolx/ralphy-skills.git
+git add .
+git commit -m "Initial commit of universal ralphy-skills CLI"
+git push -u origin main
