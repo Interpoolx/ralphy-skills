@@ -5,3 +5,5 @@ dist
 .agent
 todo.txt
 todo*
+.todo.txt
+.todo*
