@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ralphy Skills Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Ralphy Skills</h1>
+        <p class="subtitle">Universal Skills Marketplace for AI Coding Agents</p>
+      </header>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search skills..." autocomplete="off" />
+        <button id="searchButton" type="button">Search</button>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="stat-number" id="skillsCount">-</div>
+          <div class="stat-label">Skills</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="verifiedCount">-</div>
+          <div class="stat-label">Verified</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="categoriesCount">-</div>
+          <div class="stat-label">Categories</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="filter-group" id="categoryFilters"></div>
+      </div>
+
+      <div class="skills-grid" id="skillsGrid">
+        <div class="loading">Loading marketplace...</div>
+      </div>
+
+      <footer class="footer">
+        <p>
+          Install a skill via:
+          <code>npx ralphy-skills install &lt;skill-id&gt;</code>
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
