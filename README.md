@@ -74,6 +74,49 @@ npx ralphy-skills search react
 npx ralphy-skills update
 ```
 
+## 🌐 Web Interface (New in v2.0)
+
+Browse and explore skills through a beautiful web interface with SEO-friendly URLs.
+
+### Start the Web Server
+
+```bash
+npx ralphy-skills serve
+```
+
+The server starts at `http://localhost:3000`
+
+### Features
+
+- **Skills Browser**: View all installed skills in a beautiful grid layout
+- **SEO-Friendly URLs**: Clean, shareable URLs for each skill
+- **Skill Detail Pages**: Comprehensive skill information with:
+  - Breadcrumb navigation
+  - Version, author, and last updated info
+  - Tags and categories
+  - Source/repository links
+  - One-click copy install commands
+- **Search & Filter**: Find skills by name, description, or category
+- **Statistics Dashboard**: View installation stats and categories
+- **Mobile Responsive**: Works perfectly on all devices
+
+### URL Structure
+
+```
+/skills              # Browse all skills
+/skill/skill-name    # View skill details (SEO-friendly)
+/api/skills          # JSON API for skills
+/api/skills/:id      # JSON API for skill details
+```
+
+Perfect for:
+- Deploying as a static skills catalog
+- Sharing skill links directly
+- SEO optimization for skill discovery
+- Embedding in documentation
+
+See [SEO_ROUTING_GUIDE.md](SEO_ROUTING_GUIDE.md) for detailed documentation.
+
 ## Related
 
 - [Ralphy.sh VS Code Extension](https://marketplace.visualstudio.com/items?itemName=Ralphysh.ralphy-sh) - GUI-based skill management
