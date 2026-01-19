@@ -1,0 +1,27 @@
+{
+  "id": "basic-skill",
+  "name": "Basic Skill Example",
+  "description": "Minimal example skill showing Anthropic SKILL.md format",
+  "version": "1.0.0",
+  "category": "utilities",
+  "tags": ["example", "getting-started", "tutorial"],
+  "author": {
+    "name": "Ralphy Team",
+    "github": "Interpoolx",
+    "email": "hello@ralphy.sh"
+  },
+  "keywords": ["example", "getting-started", "tutorial"],
+  "source": "https://github.com/Interpoolx/ralphy-skills/tree/main/examples/basic-skill",
+  "documentation": "https://ralphy.sh/docs/creating-skills",
+  "requirements": [],
+  "compatible_agents": ["claude-code", "cursor", "windsurf", "aider", "codex"],
+  "dependencies": [],
+  "metadata": {
+    "created_at": "2026-01-19T00:00:00Z",
+    "updated_at": "2026-01-19T00:00:00Z",
+    "verified": true,
+    "featured": true,
+    "downloads": 0,
+    "rating": 5.0
+  }
+}
