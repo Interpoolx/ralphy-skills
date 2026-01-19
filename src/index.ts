@@ -34,6 +34,9 @@ program
     .option('-s, --symlink', 'Symlink local path instead of copying')
     .option('--cursor', 'Also install to .cursor/rules')
     .option('-y, --yes', 'Skip confirmation prompts')
+    .option('--private', 'Force private repository mode')
+    .option('--token <token>', 'GitHub personal access token')
+    .option('--ssh-key <path>', 'SSH key path for private repos')
     .action(async (skill: string, options) => {
         await installSkill(skill, options);
     });
@@ -60,6 +63,9 @@ program
     .description('Update AGENTS.md with installed skills')
     .option('-y, --yes', 'Skip confirmation')
     .option('-o, --output <path>', 'Output file path', 'AGENTS.md')
+    .option('-f, --format <format>', 'Output format (markdown|json|yaml)', 'markdown')
+    .option('--dry-run', 'Show what would be written without writing files')
+    .option('--include-metadata', 'Include detailed metadata in output')
     .action(async (options) => {
         const { syncAgents } = await import('./commands/sync');
         await syncAgents(options);
@@ -94,9 +100,16 @@ program
 program
     .command('search <query>')
     .description('Search for skills by name or description')
-    .action(async (query: string) => {
+    .option('--category <category>', 'Filter by category')
+    .option('--tags <tags...>', 'Filter by tags')
+    .option('--source <source>', 'Search source: registry|installed|all', 'all')
+    .option('--format <format>', 'Filter by format: symlink|installed|all', 'all')
+    .option('--sort <sort>', 'Sort by: relevance|name|popularity|updated', 'relevance')
+    .option('--limit <number>', 'Limit number of results', '50')
+    .option('--export <format>', 'Export results to file (json|csv)')
+    .action(async (query: string, options) => {
         const { searchSkills } = await import('./commands/list');
-        await searchSkills(query);
+        await searchSkills(query, options);
     });
 
 program.parse();
