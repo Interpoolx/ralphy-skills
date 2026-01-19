@@ -9,6 +9,8 @@ export interface SkillDefinition {
     folder_name: string;
     category?: string;
     source?: 'registry' | 'github' | 'local';
+    recommended?: boolean;
+    tags?: string[];
 }
 
 export interface SkillMetadata {

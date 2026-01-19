@@ -4,3 +4,25 @@ git remote add origin https://github.com/Interpoolx/ralphy-skills.git
 git add .
 git commit -m "Initial commit of universal ralphy-skills CLI"
 git push -u origin main
+
+"//registry.npmjs.org/:_authToken=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" > .npmrc
+
+Set-Content -Path ".npmrc" -Value "//registry.npmjs.org/:_authToken=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" -Encoding ASCII -NoNewline
+
+kills'
+PS D:\react-projects\r
+alphy-skills> Set-Cont
+ent -Path ".npmrc" -Va
+lue "//registry.npmjs.
+org/:_authToken=npm_Nv
+6TX2ioPxugJ7vQ14rxivp8
+MvlmCu1cCMPf" -Encodin
+g ASCII -NoNewline
+
+Set-Content -Path ".npmrc" -Value "//registry.npmjs.org/:_authToken=YOUR_NPM_TOKEN" -Encoding ASCII -NoNewline; npm publish --access public; Remove-Item .npmrc
+
+npm config set //registry.npmjs.org/:_authToken=YOUR_NPM_TOKEN
+npm publish --access public
+
+
+https://raw.githubusercontent.com/Interpoolx/ralphy-skills/refs/heads/main/marketplace.json

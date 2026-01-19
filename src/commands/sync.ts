@@ -56,14 +56,13 @@ export async function syncAgents(options: SyncOptions): Promise<void> {
     // Check if we need confirmation for file overwrite
     if (fs.existsSync(outputPath) && !options.yes) {
         console.log(chalk.yellow(`\n⚠️  File ${path.basename(outputPath)} already exists`));
-        const { overwrite } = await import('inquirer').then(inquirer => 
-            inquirer.default.prompt([{
-                type: 'confirm',
-                name: 'overwrite',
-                message: 'Overwrite existing file?',
-                default: false
-            }])
-        );
+        const { promptUser } = await import('../utils/prompt');
+        const { overwrite } = await promptUser([{
+            type: 'confirm',
+            name: 'overwrite',
+            message: 'Overwrite existing file?',
+            default: false
+        }]);
 
         if (!overwrite) {
             console.log(chalk.yellow('\n❌ Sync cancelled'));
@@ -80,10 +79,10 @@ export async function syncAgents(options: SyncOptions): Promise<void> {
 
     // Write the output
     fs.writeFileSync(outputPath, output);
-    
+
     const action = isNewFile ? 'Created' : 'Updated';
     console.log(chalk.green(`\n✅ ${action}: ${path.basename(outputPath)} (${skills.length} skill(s))`));
-    
+
     if (format === 'json' || format === 'yaml') {
         console.log(chalk.gray(`📊 Output format: ${format.toUpperCase()}`));
     }
@@ -201,7 +200,7 @@ ${skills.map(s => `
 // Simple YAML serializer (without external dependency)
 function dumpYAML(obj: any, indent: number = 0): string {
     const spaces = '  '.repeat(indent);
-    
+
     if (obj === null) return 'null';
     if (typeof obj === 'boolean') return obj.toString();
     if (typeof obj === 'number') return obj.toString();
@@ -211,12 +210,12 @@ function dumpYAML(obj: any, indent: number = 0): string {
         }
         return obj;
     }
-    
+
     if (Array.isArray(obj)) {
         if (obj.length === 0) return '[]';
         return obj.map(item => spaces + '- ' + dumpYAML(item, indent + 1).replace(/^\s+/, '')).join('\n');
     }
-    
+
     if (typeof obj === 'object') {
         return Object.keys(obj).map(key => {
             const value = obj[key];
@@ -227,6 +226,6 @@ function dumpYAML(obj: any, indent: number = 0): string {
             return spaces + key + ': ' + dumpYAML(value, indent);
         }).filter(line => line.trim()).join('\n');
     }
-    
+
     return String(obj);
 }

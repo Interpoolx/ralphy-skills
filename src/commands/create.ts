@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
-import inquirer from 'inquirer';
+import { promptUser } from '../utils/prompt';
 
 interface SkillTemplate {
     name: string;
@@ -21,13 +21,13 @@ interface SkillTemplate {
 export async function createSkill(skillName?: string) {
     console.log(chalk.cyan('\n🚀 Skill Creator - Scaffold a new skill\n'));
 
-    const answers = await inquirer.prompt<SkillTemplate>([
+    const answers = await promptUser([
         {
             type: 'input',
             name: 'name',
             message: 'Skill name:',
             default: skillName || 'my-awesome-skill',
-            validate: (input) => {
+            validate: (input: string) => {
                 if (!/^[a-z0-9-]+$/.test(input)) {
                     return 'Skill name must contain only lowercase letters, numbers, and hyphens';
                 }
@@ -38,7 +38,7 @@ export async function createSkill(skillName?: string) {
             type: 'input',
             name: 'description',
             message: 'Short description:',
-            validate: (input) => input.length > 0 || 'Description is required'
+            validate: (input: string) => input.length > 0 || 'Description is required'
         },
         {
             type: 'list',
@@ -60,7 +60,7 @@ export async function createSkill(skillName?: string) {
             type: 'input',
             name: 'tags',
             message: 'Tags (comma-separated):',
-            filter: (input) => input.split(',').map((t: string) => t.trim()).filter(Boolean)
+            filter: (input: string) => input.split(',').map((t: string) => t.trim()).filter(Boolean)
         },
         {
             type: 'input',

@@ -12,7 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as SkillSkillIdRouteImport } from './routes/skill.$skillId'
+import { Route as DocsWhatAreSkillsRouteImport } from './routes/docs.what-are-skills'
+import { Route as DocsSpecificationRouteImport } from './routes/docs.specification'
+import { Route as DocsIntegrateRouteImport } from './routes/docs.integrate'
+import { Route as DocsCreateRouteImport } from './routes/docs.create'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
@@ -29,9 +34,34 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SkillSkillIdRoute = SkillSkillIdRouteImport.update({
   id: '/skill/$skillId',
   path: '/skill/$skillId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsWhatAreSkillsRoute = DocsWhatAreSkillsRouteImport.update({
+  id: '/docs/what-are-skills',
+  path: '/docs/what-are-skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsSpecificationRoute = DocsSpecificationRouteImport.update({
+  id: '/docs/specification',
+  path: '/docs/specification',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsIntegrateRoute = DocsIntegrateRouteImport.update({
+  id: '/docs/integrate',
+  path: '/docs/integrate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsCreateRoute = DocsCreateRouteImport.update({
+  id: '/docs/create',
+  path: '/docs/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +69,82 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
+  '/docs/create': typeof DocsCreateRoute
+  '/docs/integrate': typeof DocsIntegrateRoute
+  '/docs/specification': typeof DocsSpecificationRoute
+  '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
+  '/docs/': typeof DocsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
+  '/docs/create': typeof DocsCreateRoute
+  '/docs/integrate': typeof DocsIntegrateRoute
+  '/docs/specification': typeof DocsSpecificationRoute
+  '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
+  '/docs': typeof DocsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
+  '/docs/create': typeof DocsCreateRoute
+  '/docs/integrate': typeof DocsIntegrateRoute
+  '/docs/specification': typeof DocsSpecificationRoute
+  '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
+  '/docs/': typeof DocsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/skills' | '/submit' | '/skill/$skillId'
+  fullPaths:
+    | '/'
+    | '/skills'
+    | '/submit'
+    | '/docs/create'
+    | '/docs/integrate'
+    | '/docs/specification'
+    | '/docs/what-are-skills'
+    | '/skill/$skillId'
+    | '/docs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/skills' | '/submit' | '/skill/$skillId'
-  id: '__root__' | '/' | '/skills' | '/submit' | '/skill/$skillId'
+  to:
+    | '/'
+    | '/skills'
+    | '/submit'
+    | '/docs/create'
+    | '/docs/integrate'
+    | '/docs/specification'
+    | '/docs/what-are-skills'
+    | '/skill/$skillId'
+    | '/docs'
+  id:
+    | '__root__'
+    | '/'
+    | '/skills'
+    | '/submit'
+    | '/docs/create'
+    | '/docs/integrate'
+    | '/docs/specification'
+    | '/docs/what-are-skills'
+    | '/skill/$skillId'
+    | '/docs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SkillsRoute: typeof SkillsRoute
   SubmitRoute: typeof SubmitRoute
+  DocsCreateRoute: typeof DocsCreateRoute
+  DocsIntegrateRoute: typeof DocsIntegrateRoute
+  DocsSpecificationRoute: typeof DocsSpecificationRoute
+  DocsWhatAreSkillsRoute: typeof DocsWhatAreSkillsRoute
   SkillSkillIdRoute: typeof SkillSkillIdRoute
+  DocsIndexRoute: typeof DocsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +170,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/': {
+      id: '/docs/'
+      path: '/docs'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/skill/$skillId': {
       id: '/skill/$skillId'
       path: '/skill/$skillId'
       fullPath: '/skill/$skillId'
       preLoaderRoute: typeof SkillSkillIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/what-are-skills': {
+      id: '/docs/what-are-skills'
+      path: '/docs/what-are-skills'
+      fullPath: '/docs/what-are-skills'
+      preLoaderRoute: typeof DocsWhatAreSkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/specification': {
+      id: '/docs/specification'
+      path: '/docs/specification'
+      fullPath: '/docs/specification'
+      preLoaderRoute: typeof DocsSpecificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/integrate': {
+      id: '/docs/integrate'
+      path: '/docs/integrate'
+      fullPath: '/docs/integrate'
+      preLoaderRoute: typeof DocsIntegrateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/create': {
+      id: '/docs/create'
+      path: '/docs/create'
+      fullPath: '/docs/create'
+      preLoaderRoute: typeof DocsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +219,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SkillsRoute: SkillsRoute,
   SubmitRoute: SubmitRoute,
+  DocsCreateRoute: DocsCreateRoute,
+  DocsIntegrateRoute: DocsIntegrateRoute,
+  DocsSpecificationRoute: DocsSpecificationRoute,
+  DocsWhatAreSkillsRoute: DocsWhatAreSkillsRoute,
   SkillSkillIdRoute: SkillSkillIdRoute,
+  DocsIndexRoute: DocsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

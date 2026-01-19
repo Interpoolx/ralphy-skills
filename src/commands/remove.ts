@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
+import { promptUser } from '../utils/prompt';
 import { getInstalledSkillsMetadata } from '../utils/registry';
 
 /**
@@ -42,7 +42,7 @@ export async function manageSkills(): Promise<void> {
     console.log(chalk.cyan.bold('\n🛠️  Interactive Skills Management'));
     console.log(chalk.gray('Choose an action to manage your installed skills\n'));
 
-    const { action } = await inquirer.prompt([
+    const { action } = await promptUser([
         {
             type: 'list',
             name: 'action',
@@ -80,7 +80,7 @@ async function browseSkills(skills: any[]) {
     console.log(chalk.cyan.bold('\n🔍 Browse Skills'));
     console.log(chalk.gray('Select skills to view details or remove\n'));
 
-    const { selectedSkills } = await inquirer.prompt([
+    const { selectedSkills } = await promptUser([
         {
             type: 'checkbox',
             name: 'selectedSkills',
@@ -98,7 +98,7 @@ async function browseSkills(skills: any[]) {
         return;
     }
 
-    const { action } = await inquirer.prompt([
+    const { action } = await promptUser([
         {
             type: 'list',
             name: 'action',
@@ -132,7 +132,7 @@ async function removeMultipleSkills(skills: any[]) {
     console.log(chalk.cyan.bold('\n🗑️  Remove Multiple Skills'));
     console.log(chalk.gray('Select skills to remove permanently\n'));
 
-    const { skillsToRemove } = await inquirer.prompt([
+    const { skillsToRemove } = await promptUser([
         {
             type: 'checkbox',
             name: 'skillsToRemove',
@@ -159,7 +159,7 @@ async function confirmAndRemoveSkills(skillsToRemove: any[]) {
         console.log(`  • ${skill.name} ${chalk.gray(`(${skill.source})`)}`);
     });
 
-    const { confirm } = await inquirer.prompt([
+    const { confirm } = await promptUser([
         {
             type: 'confirm',
             name: 'confirm',
@@ -191,7 +191,7 @@ async function confirmAndRemoveSkills(skillsToRemove: any[]) {
 }
 
 async function viewSkillDetails(skills: any[]) {
-    const { skill } = await inquirer.prompt([
+    const { skill } = await promptUser([
         {
             type: 'list',
             name: 'skill',
@@ -213,7 +213,7 @@ async function showSkillsDetails(skills: any[]) {
         console.log(`📂 Source: ${skill.source}`);
         console.log(`🗂️  Path: ${skill.path}`);
         console.log(`🔗 Type: ${skill.isSymlink ? 'Symlink' : 'Copied'}`);
-        
+
         // Try to read skill metadata
         try {
             const skillPath = skill.path;
@@ -223,7 +223,7 @@ async function showSkillsDetails(skills: any[]) {
                 const lines = content.split('\n');
                 const titleLine = lines.find(line => line.startsWith('# '));
                 const descriptionLine = lines.find(line => line.trim() && !line.startsWith('#'));
-                
+
                 if (titleLine) {
                     console.log(`📝 Title: ${titleLine.replace('# ', '')}`);
                 }
@@ -247,15 +247,15 @@ async function exportSkills(skills: any[]) {
 
     const exportPath = path.join(process.cwd(), 'skills-export.json');
     fs.writeFileSync(exportPath, JSON.stringify(exportData, null, 2));
-    
+
     console.log(chalk.green(`\n📤 Skills exported to: ${exportPath}`));
     console.log(chalk.gray(`Exported ${skills.length} skill(s)`));
 }
 
 async function updateSkills(skills: any[]) {
     console.log(chalk.cyan.bold('\n🔄 Update Skills'));
-    
-    const { skill } = await inquirer.prompt([
+
+    const { skill } = await promptUser([
         {
             type: 'list',
             name: 'skill',
@@ -280,3 +280,4 @@ async function updateSkills(skills: any[]) {
         console.log(chalk.green(`\n✅ Update command would be triggered for: ${skill}`));
     }
 }
+

@@ -24,8 +24,8 @@ export interface PrivateRepoConfig {
 /**
  * Parse GitHub URL and determine authentication method
  */
-export function parseGitHubAuthUrl(url: string, auth?: GitAuthOptions): { 
-    finalUrl: string; 
+export function parseGitHubAuthUrl(url: string, auth?: GitAuthOptions): {
+    finalUrl: string;
     authMethod: 'ssh' | 'token' | 'basic' | 'none';
     authConfig?: PrivateRepoConfig;
 } {
@@ -37,7 +37,7 @@ export function parseGitHubAuthUrl(url: string, auth?: GitAuthOptions): {
     // If it's a private repository format
     if (url.includes('github.com')) {
         const isPrivate = url.includes('.git') || url.includes('private') || url.includes('git@');
-        
+
         if (auth?.sshKey) {
             // SSH authentication
             const sshUrl = `git@github.com:${parsed.owner}/${parsed.repo}.git`;
@@ -85,13 +85,13 @@ export function parseGitHubAuthUrl(url: string, auth?: GitAuthOptions): {
 export function checkForSSHKeys(): { hasKey: boolean; keys: string[] } {
     const sshDir = path.join(os.homedir(), '.ssh');
     const keys: string[] = [];
-    
+
     if (!fs.existsSync(sshDir)) {
         return { hasKey: false, keys: [] };
     }
 
     const commonKeyNames = ['id_rsa', 'id_ed25519', 'id_ecdsa', 'id_dsa'];
-    
+
     for (const keyName of commonKeyNames) {
         const keyPath = path.join(sshDir, keyName);
         if (fs.existsSync(keyPath)) {
@@ -99,9 +99,9 @@ export function checkForSSHKeys(): { hasKey: boolean; keys: string[] } {
         }
     }
 
-    return { 
-        hasKey: keys.length > 0, 
-        keys 
+    return {
+        hasKey: keys.length > 0,
+        keys
     };
 }
 
@@ -149,9 +149,9 @@ export function loadGitHubToken(): string | null {
  * Interactive GitHub authentication prompt
  */
 export async function promptForGitAuth(): Promise<GitAuthOptions | null> {
-    const inquirer = await import('inquirer');
-    
-    const { authMethod } = await inquirer.default.prompt([
+    const { promptUser } = await import('./prompt');
+
+    const { authMethod } = await promptUser([
         {
             type: 'list',
             name: 'authMethod',
@@ -171,7 +171,7 @@ export async function promptForGitAuth(): Promise<GitAuthOptions | null> {
 
     switch (authMethod) {
         case 'token':
-            const { token } = await inquirer.default.prompt([
+            const { token } = await promptUser([
                 {
                     type: 'password',
                     name: 'token',
@@ -184,7 +184,7 @@ export async function promptForGitAuth(): Promise<GitAuthOptions | null> {
                     }
                 }
             ]);
-            
+
             // Save token to environment for this session
             process.env.GITHUB_TOKEN = token;
             return { token };
@@ -197,7 +197,7 @@ export async function promptForGitAuth(): Promise<GitAuthOptions | null> {
                 return null;
             }
 
-            const { sshPassphrase } = await inquirer.default.prompt([
+            const { sshPassphrase } = await promptUser([
                 {
                     type: 'password',
                     name: 'sshPassphrase',
@@ -209,7 +209,7 @@ export async function promptForGitAuth(): Promise<GitAuthOptions | null> {
             return { sshPassphrase: sshPassphrase || undefined };
 
         case 'basic':
-            const { username, password } = await inquirer.default.prompt([
+            const { username, password } = await promptUser([
                 {
                     type: 'input',
                     name: 'username',
@@ -264,11 +264,11 @@ export async function validatePrivateRepoAccess(url: string, auth: GitAuthOption
         setupGitEnvironment(auth);
 
         const { execSync } = require('child_process');
-        
+
         // Test repository access
-        execSync(`git ls-remote ${finalUrl}`, { 
+        execSync(`git ls-remote ${finalUrl}`, {
             stdio: 'pipe',
-            timeout: 10000 
+            timeout: 10000
         });
 
         return true;
@@ -293,20 +293,20 @@ export async function getPrivateRepoInfo(url: string, auth: GitAuthOptions): Pro
         setupGitEnvironment(auth);
 
         const { execSync } = require('child_process');
-        
+
         // Clone to temporary directory to get info
         const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ralphy-'));
         const repoPath = path.join(tempDir, 'repo');
 
-        execSync(`git clone ${finalUrl} ${repoPath}`, { 
+        execSync(`git clone ${finalUrl} ${repoPath}`, {
             stdio: 'pipe',
-            timeout: 30000 
+            timeout: 30000
         });
 
         // Read package.json or readme for info
         const packagePath = path.join(repoPath, 'package.json');
         const readmePath = path.join(repoPath, 'README.md');
-        
+
         let name = path.basename(finalUrl, '.git');
         let description = '';
         let isPrivate = true;

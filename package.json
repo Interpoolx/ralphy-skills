@@ -1,20 +1,30 @@
 {
     "name": "ralphy-skills",
-    "version": "2.0.0",
+    "version": "2.2.1",
     "description": "Universal Skills Marketplace for AI Coding Agents. Browse, install, and manage AI agent skills with CLI and web interface.",
     "keywords": [
-        "ai",
         "skills",
         "agent",
+        "ai",
+        "claude-code",
+        "codex",
         "cursor",
-        "vscode",
-        "copilot",
-        "claude",
         "windsurf",
-        "aider",
-        "marketplace",
+        "github",
+        "letta",
+        "vscode",
+        "amp",
+        "goose",
+        "opencode",
+        "gemini",
+        "antigravity",
+        "trae",
+        "qoder",
+        "codebuddy",
+        "copilot",
         "cli",
-        "web-browser",
+        "installer",
+        "marketplace",
         "skill-manager",
         "ai-tools",
         "developer-tools"
@@ -49,10 +59,12 @@
         "serve": "npm run build && node dist/index.js serve"
     },
     "dependencies": {
+        "@clack/prompts": "^0.11.0",
         "chalk": "^4.1.2",
         "commander": "^11.1.0",
         "gray-matter": "^4.0.3",
-        "inquirer": "^9.3.8"
+        "inquirer": "^9.3.8",
+        "picocolors": "^1.1.1"
     },
     "devDependencies": {
         "@types/inquirer": "^9.0.9",
