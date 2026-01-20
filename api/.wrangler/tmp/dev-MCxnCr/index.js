@@ -22314,6 +22314,15 @@ app.post("/api/admin/prds/bulk-delete", async (c) => {
     return c.json({ error: "Failed to bulk delete PRDs" }, 500);
   }
 });
+app.get("/api/admin/prds/categories", async (c) => {
+  const db = drizzle(c.env.DB);
+  try {
+    const results = await db.select().from(prdCategories).all();
+    return c.json(results);
+  } catch (error48) {
+    return c.json({ error: "Failed to fetch PRD categories" }, 500);
+  }
+});
 app.get("/api/admin/prds/:id", async (c) => {
   const id = c.req.param("id");
   try {
@@ -22421,15 +22430,6 @@ app.get("/api/admin/prds", async (c) => {
   } catch (error48) {
     console.error("Admin PRDs list error:", error48);
     return c.json({ error: "Failed to list PRDs", prds: [] }, 500);
-  }
-});
-app.get("/api/admin/prds/categories", async (c) => {
-  const db = drizzle(c.env.DB);
-  try {
-    const results = await db.select().from(prdCategories).all();
-    return c.json(results);
-  } catch (error48) {
-    return c.json({ error: "Failed to fetch PRD categories" }, 500);
   }
 });
 app.post("/api/admin/prds/categories", async (c) => {

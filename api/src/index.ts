@@ -1028,6 +1028,17 @@ app.post('/api/admin/prds/bulk-delete', async (c) => {
     }
 })
 
+// ADMIN: GET ALL PRD CATEGORIES
+app.get('/api/admin/prds/categories', async (c) => {
+    const db = drizzle(c.env.DB)
+    try {
+        const results = await db.select().from(prdCategories).all()
+        return c.json(results)
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch PRD categories' }, 500)
+    }
+})
+
 // ADMIN: GET PRD BY ID (for editor)
 app.get('/api/admin/prds/:id', async (c) => {
     const id = c.req.param('id')
@@ -1157,16 +1168,6 @@ app.get('/api/admin/prds', async (c) => {
     }
 })
 
-// ADMIN: GET ALL PRD CATEGORIES
-app.get('/api/admin/prds/categories', async (c) => {
-    const db = drizzle(c.env.DB)
-    try {
-        const results = await db.select().from(prdCategories).all()
-        return c.json(results)
-    } catch (error) {
-        return c.json({ error: 'Failed to fetch PRD categories' }, 500)
-    }
-})
 
 // ADMIN: CREATE PRD CATEGORY
 app.post('/api/admin/prds/categories', async (c) => {

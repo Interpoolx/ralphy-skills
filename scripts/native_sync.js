@@ -9,7 +9,7 @@ const BATCH_SIZE = 50; // Rows per batch (Reduced to avoid SQLITE_TOOBIG)
 
 // Base tables to sync (Order matters for foreign keys)
 // FTS tables are excluded as they are populated by triggers
-const TABLES = ['categories', 'skills', 'installs'];
+const TABLES = ['categories', 'skills', 'installs', 'prd_categories', 'prds'];
 
 function run(command, options = {}) {
     try {
@@ -74,7 +74,7 @@ function generateInsertSql(table, rows) {
     return `INSERT OR REPLACE INTO ${table} (${columns.join(', ')}) VALUES ${values.join(', ')};`;
 }
 
-function sync(direction) {
+function sync(direction, specificTable = null) {
     const db = getDbName();
     console.log(`\n🔄 Starting FTS-Safe Sync: ${direction.toUpperCase()} (${db})\n`);
 
@@ -84,7 +84,9 @@ function sync(direction) {
     console.log('1. Fetching data from SOURCE...');
     const allSql = [];
 
-    for (const table of TABLES) {
+    const tablesToSync = specificTable ? [specificTable] : TABLES;
+
+    for (const table of tablesToSync) {
         const rows = fetchTableData(db, table, sourceIsLocal);
         console.log(`   - ${table}: ${rows.length} rows`);
 
@@ -121,9 +123,20 @@ function sync(direction) {
     }
 }
 
-const action = process.argv[2];
+const args = process.argv.slice(2);
+const action = args[0];
+let specificTable = null;
+
+// Parse arguments manually
+for (let i = 1; i < args.length; i++) {
+    if (args[i] === '--table' && args[i + 1]) {
+        specificTable = args[i + 1];
+        i++;
+    }
+}
+
 if (['push', 'pull'].includes(action)) {
-    sync(action);
+    sync(action, specificTable);
 } else {
-    console.log('Usage: node scripts/native_sync.js [push|pull]');
+    console.log('Usage: node scripts/native_sync.js [push|pull] [--table tableName]');
 }
