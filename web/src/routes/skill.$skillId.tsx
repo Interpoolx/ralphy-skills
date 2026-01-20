@@ -4,6 +4,7 @@ import type { Skill } from '../types'
 import confetti from 'canvas-confetti'
 import clsx from 'clsx'
 import { ShareModal } from '../components/ShareModal'
+import { SEO } from '../components/SEO'
 
 import { API_URL } from '../constants'
 
@@ -14,6 +15,7 @@ export const Route = createFileRoute('/skill/$skillId')({
 function SkillPage() {
   const { skillId } = useParams({ from: '/skill/$skillId' })
   const [skill, setSkill] = useState<Skill | null>(null)
+  const [relatedSkills, setRelatedSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(true)
 
   // Local State for interactions
@@ -23,6 +25,10 @@ function SkillPage() {
   const [showCopied, setShowCopied] = useState(false)
 
   useEffect(() => {
+    // Reset state on skillId change
+    setLoading(true)
+    setSkill(null)
+
     // Load Skill Data
     // Load Skill Data
     fetch(`${API_URL}/api/skills/${skillId}`)
@@ -36,6 +42,26 @@ function SkillPage() {
       .then((data: Skill | null) => {
         setSkill(data)
         setLoading(false)
+
+        if (data && data.category) {
+          // Fetch related skills
+          fetch(`${API_URL}/api/search?category=${encodeURIComponent(data.category)}&limit=10`)
+            .then(res => res.json())
+            .then(searchData => {
+              const related = (searchData.skills || [])
+                .filter((s: any) => s.id !== data.id) // Exclude current skill
+                .slice(0, 10) // Take max 3
+                .map((s: any) => ({
+                  id: s.id,
+                  name: s.name,
+                  description: s.description,
+                  author: { name: s.author },
+                  install_count: s.install_count
+                }))
+              setRelatedSkills(related)
+            })
+            .catch(err => console.error('Failed to load related skills:', err))
+        }
       })
       .catch((err) => {
         console.error('Failed to load skill:', err)
@@ -111,6 +137,15 @@ function SkillPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {skill && (
+        <SEO
+          title={skill.name}
+          description={skill.description}
+          keywords={typeof skill.tags === 'string' ? JSON.parse(skill.tags) : skill.tags}
+          type="article"
+          url={window.location.href}
+        />
+      )}
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
@@ -185,11 +220,32 @@ function SkillPage() {
                 </div>
               </div>
 
+              <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                {skill.githubStars !== undefined && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                    <span className="font-semibold">{skill.githubStars.toLocaleString()} stars</span>
+                  </div>
+                )}
+                {skill.installCount !== undefined && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    <span className="font-semibold">{skill.installCount.toLocaleString()} installs</span>
+                  </div>
+                )}
+                {skill.platform && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    <span className="font-semibold">{skill.platform}</span>
+                  </div>
+                )}
+              </div>
+
               <p className="mt-6 text-lg leading-8 text-gray-600">
                 {skill.description}
               </p>
 
-              <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-2 gap-4">
+              <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {skill.author && (
                   (() => {
                     const authorName = typeof skill.author === 'string' ? skill.author : skill.author?.name || 'Unknown'
@@ -197,10 +253,10 @@ function SkillPage() {
                       <div>
                         <h3 className="text-sm font-medium text-gray-500">Author</h3>
                         <div className="mt-2 flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
+                          <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-[10px] uppercase">
                             {authorName.substring(0, 2)}
                           </div>
-                          <span className="text-sm font-semibold text-gray-900">{authorName}</span>
+                          <span className="text-sm font-semibold text-gray-900 truncate">{authorName}</span>
                         </div>
                       </div>
                     )
@@ -211,6 +267,22 @@ function SkillPage() {
                   <div className="mt-2">
                     <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 capitalize">
                       {skill.category}
+                    </span>
+                  </div>
+                </div>
+                {skill.license && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">License</h3>
+                    <div className="mt-2">
+                      <span className="text-sm font-semibold text-gray-900">{skill.license}</span>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
+                  <div className="mt-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {skill.updatedAt || skill.updated_at ? new Date(skill.updatedAt || skill.updated_at || '').toLocaleDateString() : 'Recently'}
                     </span>
                   </div>
                 </div>
@@ -299,7 +371,7 @@ function SkillPage() {
               <div className="space-y-8">
                 {/* Mock Review 1 */}
                 <div className="flex gap-4">
-                  <div className="h-10 w-10 flex-none rounded-full bg-gray-100"></div>
+                  <div className="h-10 w-10 flex-none rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">AD</div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-gray-900">Alex D.</h3>
@@ -313,7 +385,7 @@ function SkillPage() {
                 </div>
                 {/* Mock Review 2 */}
                 <div className="flex gap-4">
-                  <div className="h-10 w-10 flex-none rounded-full bg-gray-100"></div>
+                  <div className="h-10 w-10 flex-none rounded-full bg-purple-50 flex items-center justify-center text-purple-600 font-bold">SM</div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-gray-900">Sarah M.</h3>
@@ -335,16 +407,16 @@ function SkillPage() {
             <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Resources</h3>
               <ul className="space-y-4">
-                {skill.source && (
+                {skill.githubUrl && (
                   <li>
-                    <a href={skill.source} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600">
+                    <a href={skill.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" /></svg>
-                      View Source Code
+                      View Repository
                     </a>
                   </li>
                 )}
                 <li>
-                  <a href={reportIssueUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600">
+                  <a href={reportIssueUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 transition-colors">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     Report an Issue
                   </a>
@@ -370,6 +442,37 @@ function SkillPage() {
                 </div>
               )
             })()}
+
+            {/* Related Skills */}
+            {relatedSkills.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Related Skills</h3>
+                <div className="space-y-4">
+                  {relatedSkills.map((related) => (
+                    <Link
+                      key={related.id}
+                      to="/skill/$skillId"
+                      params={{ skillId: related.id }}
+                      className="group block"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                          {related.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                            {related.name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {related.description}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

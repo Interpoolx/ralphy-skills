@@ -3,7 +3,10 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { DataTable } from '../components/DataTable'
 import { RightDrawer } from '../components/RightDrawer'
+import { ConfirmationModal } from '../components/ConfirmationModal'
+import { ValidationModal } from '../components/ValidationModal'
 import { getApiUrl } from '../lib/api-config'
+import { toast } from 'sonner'
 import type { ColumnDef } from '@tanstack/react-table'
 
 export const Route = createFileRoute('/hpanel/skills')({
@@ -23,6 +26,7 @@ interface Skill {
   install_count: number
   is_featured: number
   is_verified: number
+  status: 'published' | 'pending' | 'invalid'
   tags: string
   version: string
   created_at: string
@@ -30,6 +34,7 @@ interface Skill {
   platform: string
   metadata: any
 }
+
 const PLATFORMS = ['global', 'claude', 'cursor', 'codex', 'copilot', 'windsurf']
 
 function SkillsPage() {
@@ -40,12 +45,28 @@ function SkillsPage() {
   const [sourceFilter, setSourceFilter] = useState('')
   const [platformFilter, setPlatformFilter] = useState('')
   const [namespaceFilter, setNamespaceFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 })
+  const [sortBy, setSortBy] = useState('relevance')
+  const [selectedRowIds, setSelectedRowIds] = useState<Record<string, boolean>>({})
+
+  // Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+  })
 
   // Fetch skills with server-side pagination and filtering
   const { data: searchData, isLoading } = useQuery({
-    queryKey: ['skills', pagination, searchQuery, providerFilter, platformFilter, sourceFilter, namespaceFilter],
+    queryKey: ['skills', pagination, searchQuery, providerFilter, platformFilter, sourceFilter, namespaceFilter, statusFilter, sortBy],
     queryFn: async () => {
       const params = new URLSearchParams({
         limit: pagination.pageSize.toString(),
@@ -55,6 +76,8 @@ function SkillsPage() {
         platform: platformFilter,
         source: sourceFilter,
         namespace: namespaceFilter,
+        status: statusFilter,
+        sort: sortBy,
       })
       const res = await fetch(`${getApiUrl()}/api/search?${params.toString()}`)
       return res.json()
@@ -82,21 +105,64 @@ function SkillsPage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await fetch(`${getApiUrl()}/api/admin/skills/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${getApiUrl()}/api/admin/skills/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ralphy-default-admin-token' }
+      })
+      if (!res.ok) throw new Error('Delete failed');
+      return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['skills'] })
+    onSuccess: () => {
+      toast.success('Skill deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+    },
+    onError: () => {
+      toast.error('Failed to delete skill');
+    }
+  })
+
+  // Bulk Delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch(`${getApiUrl()}/api/admin/skills/bulk-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ralphy-default-admin-token'
+        },
+        body: JSON.stringify({ ids })
+      });
+      if (!res.ok) throw new Error('Bulk delete failed');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || 'Skills deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      setSelectedRowIds({});
+    },
+    onError: () => {
+      toast.error('Failed to delete skills');
+    }
   })
 
   // Toggle featured mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, featured }: { id: string; featured: boolean }) => {
-      await fetch(`${getApiUrl()}/api/admin/skills/${id}`, {
+      const res = await fetch(`${getApiUrl()}/api/admin/skills/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ralphy-default-admin-token'
+        },
         body: JSON.stringify({ is_featured: featured ? 1 : 0 })
       })
+      if (!res.ok) throw new Error('Update failed');
+      return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['skills'] })
+    onSuccess: () => {
+      toast.success('Skill updated');
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+    }
   })
 
   const openEdit = (skill: Skill) => {
@@ -104,21 +170,117 @@ function SkillsPage() {
     setDrawerMode('edit')
   }
 
+  // Validation Progress State
+  const [validationProgress, setValidationProgress] = useState({
+    isOpen: false,
+    total: 0,
+    processed: 0,
+    valid: 0,
+    invalid: 0,
+    isComplete: false
+  })
+
+  // Function to start chunked validation
+  const startValidation = async () => {
+    try {
+      const idsRes = await fetch(`${getApiUrl()}/api/admin/skills/ids`, {
+        headers: {
+          'Authorization': 'Bearer ralphy-default-admin-token'
+        }
+      });
+      const { ids } = await idsRes.json();
+
+      setValidationProgress({
+        isOpen: true,
+        total: ids.length,
+        processed: 0,
+        valid: 0,
+        invalid: 0,
+        isComplete: false
+      });
+
+      const chunkSize = 20;
+      let processedCount = 0;
+      let validCount = 0;
+      let invalidCount = 0;
+
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize);
+
+        const res = await fetch(`${getApiUrl()}/api/admin/skills/validate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ralphy-default-admin-token'
+          },
+          body: JSON.stringify({ ids: chunk })
+        });
+
+        const result = await res.json();
+
+        processedCount += chunk.length;
+        validCount += result.validCount || 0;
+        invalidCount += result.invalidCount || 0;
+
+        setValidationProgress(prev => ({
+          ...prev,
+          processed: processedCount,
+          valid: validCount,
+          invalid: invalidCount
+        }));
+      }
+
+      setValidationProgress(prev => ({ ...prev, isComplete: true }));
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+    } catch (error) {
+      console.error('Validation error:', error);
+      toast.error('Failed to validate URLs');
+      setValidationProgress(prev => ({ ...prev, isOpen: false }));
+    }
+  };
+
   const columns: ColumnDef<Skill>[] = [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={table.getToggleAllPageRowsSelectedHandler()}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
+        />
+      ),
+    },
     {
       accessorKey: 'name',
       header: 'Name',
       cell: ({ row }) => (
         <div>
-          <p className="font-medium text-white">{row.original.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-white">{row.original.name}</p>
+            <a
+              href={row.original.github_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-500 hover:text-blue-400 transition-colors"
+              title="Open GitHub Repository"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
           <p className="text-sm text-gray-500 truncate max-w-xs">{row.original.description}</p>
         </div>
       )
-    },
-    {
-      accessorKey: 'namespace',
-      header: 'Namespace',
-      cell: ({ row }) => <span className="text-gray-500 text-xs font-mono">{row.original.namespace || '-'}</span>
     },
     {
       accessorKey: 'category',
@@ -126,31 +288,6 @@ function SkillsPage() {
       cell: ({ row }) => (
         <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-sm capitalize">{row.original.category}</span>
       )
-    },
-    {
-      accessorKey: 'platform',
-      header: 'Platform',
-      cell: ({ row }) => {
-        const platformColors: Record<string, string> = {
-          global: 'bg-green-500/20 text-green-400',
-          claude: 'bg-orange-500/20 text-orange-400',
-          cursor: 'bg-purple-500/20 text-purple-400',
-          codex: 'bg-blue-500/20 text-blue-400',
-          copilot: 'bg-sky-500/20 text-sky-400',
-          windsurf: 'bg-teal-500/20 text-teal-400',
-        }
-        const p = row.original.platform || 'global'
-        return <span className={`px-2 py-1 rounded text-xs capitalize ${platformColors[p] || 'bg-gray-700 text-gray-400'}`}>{p}</span>
-      }
-    },
-    {
-      accessorKey: 'import_source',
-      header: 'Source',
-      cell: ({ row }) => {
-        const sourceIcons: Record<string, string> = { marketplace: '📦', 'claude-plugins': '🔌', manual: '✏️' }
-        const s = row.original.import_source || 'manual'
-        return <span className="text-gray-400 text-sm">{sourceIcons[s] || '📁'} {s}</span>
-      }
     },
     {
       accessorKey: 'stars',
@@ -165,17 +302,31 @@ function SkillsPage() {
     {
       id: 'status',
       header: 'Status',
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          {row.original.is_verified ? <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">✓ Verified</span> : null}
-          <button
-            onClick={() => toggleFeaturedMutation.mutate({ id: row.original.id, featured: !row.original.is_featured })}
-            className={`px-2 py-1 rounded text-xs ${row.original.is_featured ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
-          >
-            {row.original.is_featured ? '⭐ Featured' : 'Feature'}
-          </button>
-        </div>
-      )
+      cell: ({ row }) => {
+        const status = row.original.status || 'published';
+        let statusColor = 'bg-gray-700 text-gray-300';
+        if (status === 'published') statusColor = 'bg-green-500/20 text-green-400';
+        if (status === 'pending') statusColor = 'bg-yellow-500/20 text-yellow-400';
+        if (status === 'invalid') statusColor = 'bg-red-500/20 text-red-400';
+
+        return (
+          <div className="flex flex-col gap-1.5">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase w-fit ${statusColor}`}>
+              {status}
+            </span>
+            <div className="flex gap-1">
+              {row.original.is_verified ? <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs" title="Verified">✓</span> : null}
+              <button
+                onClick={() => toggleFeaturedMutation.mutate({ id: row.original.id, featured: !row.original.is_featured })}
+                className={`px-2 py-1 rounded text-xs ${row.original.is_featured ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
+                title={row.original.is_featured ? 'Featured' : 'Mark as Featured'}
+              >
+                {row.original.is_featured ? '⭐' : '☆'}
+              </button>
+            </div>
+          </div>
+        )
+      }
     },
     {
       id: 'actions',
@@ -184,7 +335,17 @@ function SkillsPage() {
         <div className="flex gap-2">
           <button onClick={() => openEdit(row.original)} className="text-blue-400 hover:text-blue-300 text-sm">Edit</button>
           <button
-            onClick={() => { if (confirm(`Delete "${row.original.name}"?`)) deleteMutation.mutate(row.original.id) }}
+            onClick={() => {
+              setConfirmModal({
+                isOpen: true,
+                title: 'Delete Skill',
+                message: `Are you sure you want to permanently delete "${row.original.name}"? This action cannot be undone.`,
+                onConfirm: () => {
+                  deleteMutation.mutate(row.original.id);
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                }
+              })
+            }}
             className="text-red-400 hover:text-red-300 text-sm"
           >
             Delete
@@ -194,6 +355,21 @@ function SkillsPage() {
     }
   ]
 
+  const handleBulkDelete = () => {
+    const selectedIds = Object.keys(selectedRowIds);
+    if (selectedIds.length === 0) return;
+
+    setConfirmModal({
+      isOpen: true,
+      title: 'Bulk Delete Skills',
+      message: `Are you sure you want to permanently delete ${selectedIds.length} skills? This action cannot be undone.`,
+      onConfirm: () => {
+        bulkDeleteMutation.mutate(selectedIds);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    })
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -202,6 +378,25 @@ function SkillsPage() {
           <p className="text-gray-400">Manage all skills in the registry ({totalCount} total)</p>
         </div>
         <div className="flex gap-3">
+          {Object.keys(selectedRowIds).length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
+            >
+              🗑️ Delete {Object.keys(selectedRowIds).length}
+            </button>
+          )}
+          <button
+            onClick={startValidation}
+            disabled={validationProgress.isOpen && !validationProgress.isComplete}
+            className={`px-4 py-2 text-gray-300 border border-gray-600 rounded-lg transition-all flex items-center gap-2 ${validationProgress.isOpen && !validationProgress.isComplete
+              ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+              : 'bg-gray-700 hover:bg-gray-600 hover:text-white'
+              }`}
+            title="Check if all GitHub URLs are still valid"
+          >
+            {validationProgress.isOpen && !validationProgress.isComplete ? '⌛ Validating...' : '🔍 Validate URLs'}
+          </button>
           <button onClick={() => setDrawerMode('import')} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2">
             📥 Import
           </button>
@@ -213,6 +408,27 @@ function SkillsPage() {
 
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-4">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="relevance">Relevance</option>
+          <option value="stars">Most Stars</option>
+          <option value="installs">Most Installed</option>
+          <option value="newest">Recently Added</option>
+          <option value="name">Name</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Status</option>
+          <option value="published">Published</option>
+          <option value="pending">Pending</option>
+          <option value="invalid">Invalid</option>
+        </select>
         <select
           value={providerFilter}
           onChange={(e) => setProviderFilter(e.target.value)}
@@ -259,6 +475,28 @@ function SkillsPage() {
         onPageSizeChange={(pageSize) => setPagination({ pageIndex: 0, pageSize })}
         globalFilter={searchQuery}
         onGlobalFilterChange={setSearchQuery}
+        rowSelection={selectedRowIds}
+        onRowSelectionChange={setSelectedRowIds}
+        getRowId={(row) => row.id}
+      />
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        confirmText="Permanently Delete"
+      />
+
+      <ValidationModal
+        isOpen={validationProgress.isOpen}
+        total={validationProgress.total}
+        processed={validationProgress.processed}
+        valid={validationProgress.valid}
+        invalid={validationProgress.invalid}
+        isComplete={validationProgress.isComplete}
+        onClose={() => setValidationProgress(prev => ({ ...prev, isOpen: false }))}
       />
 
       {/* Add/Edit Drawer */}
@@ -298,6 +536,7 @@ function SkillForm({ skill, onSuccess }: { skill: Skill | null; onSuccess: () =>
     platform: skill?.platform || 'global',
     stars: skill?.stars || 0,
     downloads: skill?.downloads || 0,
+    status: skill?.status || 'published',
     metadata: skill?.metadata ? (typeof skill.metadata === 'string' ? skill.metadata : JSON.stringify(skill.metadata, null, 2)) : '{}'
   })
   const [submitting, setSubmitting] = useState(false)
@@ -319,6 +558,7 @@ function SkillForm({ skill, onSuccess }: { skill: Skill | null; onSuccess: () =>
         source: form.github_url,
         tags: form.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
         platform: form.platform,
+        status: form.status,
         stars: Number(form.stars),
         downloads: Number(form.downloads),
         metadata: JSON.parse(form.metadata || '{}'),
@@ -327,7 +567,10 @@ function SkillForm({ skill, onSuccess }: { skill: Skill | null; onSuccess: () =>
 
       const res = await fetch(`${getApiUrl()}/api/admin/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ralphy-default-admin-token'
+        },
         body: JSON.stringify({ skills: [skillData], import_source: 'manual', platform: form.platform })
       })
 
@@ -392,6 +635,16 @@ function SkillForm({ skill, onSuccess }: { skill: Skill | null; onSuccess: () =>
             {PLATFORMS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Status</label>
+        <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+          className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="published">Published</option>
+          <option value="pending">Pending</option>
+          <option value="invalid">Invalid</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -490,7 +743,10 @@ function ImportForm({ onSuccess }: { onSuccess: () => void }) {
 
       const importRes = await fetch(`${getApiUrl()}/api/admin/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ralphy-default-admin-token'
+        },
         body: JSON.stringify({
           skills,
           import_source: source,

@@ -1,0 +1,139 @@
+{
+    "prds": [
+        {
+            "name": "E-Commerce Platform PRD",
+            "slug": "e-commerce-platform-spec",
+            "description": "A comprehensive PRD for a modern e-commerce platform with cart management, checkout, and order tracking.",
+            "category": "business",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "ecommerce",
+                "retail",
+                "payments",
+                "cart"
+            ],
+            "filePath": "/specs/business/e-commerce-platform-spec.md"
+        },
+        {
+            "name": "Social Fitness App PRD",
+            "slug": "social-fitness-spec",
+            "description": "A fitness and wellness app with social features, workout tracking, and community challenges.",
+            "category": "consumer",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "fitness",
+                "social",
+                "health",
+                "wellness"
+            ],
+            "filePath": "/specs/consumer/social-fitness-spec.md"
+        },
+        {
+            "name": "Design Collaboration Platform PRD",
+            "slug": "design-collab-spec",
+            "description": "A real-time design collaboration platform for teams with versioning and feedback tools.",
+            "category": "creative",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "design",
+                "collaboration",
+                "creative",
+                "figma-like"
+            ],
+            "filePath": "/specs/creative/design-collab-spec.md"
+        },
+        {
+            "name": "Vortex API Gateway PRD",
+            "slug": "api-gateway-spec",
+            "description": "A cloud-native API gateway with authentication, rate limiting, and observability for microservices.",
+            "category": "developer",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "api",
+                "gateway",
+                "microservices",
+                "backend"
+            ],
+            "filePath": "/specs/developer/api-gateway-spec.md"
+        },
+        {
+            "name": "Learning Management System PRD",
+            "slug": "lms-spec",
+            "description": "An LMS for online courses with progress tracking, assessments, and certifications.",
+            "category": "education",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "education",
+                "lms",
+                "courses",
+                "learning"
+            ],
+            "filePath": "/specs/education/lms-spec.md"
+        },
+        {
+            "name": "Telemedicine App PRD",
+            "slug": "telemedicine-app-spec",
+            "description": "A telemedicine platform for virtual consultations, prescriptions, and health records.",
+            "category": "health",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "health",
+                "telemedicine",
+                "medical",
+                "healthcare"
+            ],
+            "filePath": "/specs/health/telemedicine-app-spec.md"
+        },
+        {
+            "name": "Inventory Tracking System PRD",
+            "slug": "inventory-tracking-spec",
+            "description": "An inventory and warehouse management system with barcode scanning and analytics.",
+            "category": "operations",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "inventory",
+                "warehouse",
+                "operations",
+                "logistics"
+            ],
+            "filePath": "/specs/operations/inventory-tracking-spec.md"
+        },
+        {
+            "name": "Community Event Platform PRD",
+            "slug": "community-event-spec",
+            "description": "A platform for organizing local events, meetups, and community gatherings.",
+            "category": "other",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "events",
+                "community",
+                "social",
+                "meetups"
+            ],
+            "filePath": "/specs/other/community-event-spec.md"
+        },
+        {
+            "name": "Project Management Tool PRD",
+            "slug": "pm-tool-spec",
+            "description": "A project management tool with task boards, time tracking, and team collaboration.",
+            "category": "productivity",
+            "author": "Ralphy Team",
+            "version": "1.1",
+            "tags": [
+                "project-management",
+                "productivity",
+                "tasks",
+                "collaboration"
+            ],
+            "filePath": "/specs/productivity/pm-tool-spec.md"
+        }
+    ]
+}

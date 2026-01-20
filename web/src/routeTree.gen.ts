@@ -11,13 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as PrdsRouteImport } from './routes/prds'
 import { Route as HpanelRouteImport } from './routes/hpanel'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HpanelIndexRouteImport } from './routes/hpanel.index'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as SkillSkillIdRouteImport } from './routes/skill.$skillId'
+import { Route as PrdSlugRouteImport } from './routes/prd.$slug'
+import { Route as HpanelSubmissionsRouteImport } from './routes/hpanel.submissions'
 import { Route as HpanelSkillsRouteImport } from './routes/hpanel.skills'
 import { Route as HpanelSettingsRouteImport } from './routes/hpanel.settings'
+import { Route as HpanelPrdsRouteImport } from './routes/hpanel.prds'
+import { Route as HpanelPrdCategoriesRouteImport } from './routes/hpanel.prd-categories'
 import { Route as HpanelImportRouteImport } from './routes/hpanel.import'
 import { Route as HpanelDocsRouteImport } from './routes/hpanel.docs'
 import { Route as HpanelCategoriesRouteImport } from './routes/hpanel.categories'
@@ -35,6 +40,11 @@ const SubmitRoute = SubmitRouteImport.update({
 const SkillsRoute = SkillsRouteImport.update({
   id: '/skills',
   path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrdsRoute = PrdsRouteImport.update({
+  id: '/prds',
+  path: '/prds',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HpanelRoute = HpanelRouteImport.update({
@@ -62,6 +72,16 @@ const SkillSkillIdRoute = SkillSkillIdRouteImport.update({
   path: '/skill/$skillId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrdSlugRoute = PrdSlugRouteImport.update({
+  id: '/prd/$slug',
+  path: '/prd/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HpanelSubmissionsRoute = HpanelSubmissionsRouteImport.update({
+  id: '/submissions',
+  path: '/submissions',
+  getParentRoute: () => HpanelRoute,
+} as any)
 const HpanelSkillsRoute = HpanelSkillsRouteImport.update({
   id: '/skills',
   path: '/skills',
@@ -70,6 +90,16 @@ const HpanelSkillsRoute = HpanelSkillsRouteImport.update({
 const HpanelSettingsRoute = HpanelSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelPrdsRoute = HpanelPrdsRouteImport.update({
+  id: '/prds',
+  path: '/prds',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelPrdCategoriesRoute = HpanelPrdCategoriesRouteImport.update({
+  id: '/prd-categories',
+  path: '/prd-categories',
   getParentRoute: () => HpanelRoute,
 } as any)
 const HpanelImportRoute = HpanelImportRouteImport.update({
@@ -116,6 +146,7 @@ const DocsCreateRoute = DocsCreateRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/hpanel': typeof HpanelRouteWithChildren
+  '/prds': typeof PrdsRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
   '/docs/create': typeof DocsCreateRoute
@@ -126,14 +157,19 @@ export interface FileRoutesByFullPath {
   '/hpanel/categories': typeof HpanelCategoriesRoute
   '/hpanel/docs': typeof HpanelDocsRoute
   '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/prd-categories': typeof HpanelPrdCategoriesRoute
+  '/hpanel/prds': typeof HpanelPrdsRoute
   '/hpanel/settings': typeof HpanelSettingsRoute
   '/hpanel/skills': typeof HpanelSkillsRoute
+  '/hpanel/submissions': typeof HpanelSubmissionsRoute
+  '/prd/$slug': typeof PrdSlugRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs/': typeof DocsIndexRoute
   '/hpanel/': typeof HpanelIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/prds': typeof PrdsRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
   '/docs/create': typeof DocsCreateRoute
@@ -144,8 +180,12 @@ export interface FileRoutesByTo {
   '/hpanel/categories': typeof HpanelCategoriesRoute
   '/hpanel/docs': typeof HpanelDocsRoute
   '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/prd-categories': typeof HpanelPrdCategoriesRoute
+  '/hpanel/prds': typeof HpanelPrdsRoute
   '/hpanel/settings': typeof HpanelSettingsRoute
   '/hpanel/skills': typeof HpanelSkillsRoute
+  '/hpanel/submissions': typeof HpanelSubmissionsRoute
+  '/prd/$slug': typeof PrdSlugRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs': typeof DocsIndexRoute
   '/hpanel': typeof HpanelIndexRoute
@@ -154,6 +194,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/hpanel': typeof HpanelRouteWithChildren
+  '/prds': typeof PrdsRoute
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
   '/docs/create': typeof DocsCreateRoute
@@ -164,8 +205,12 @@ export interface FileRoutesById {
   '/hpanel/categories': typeof HpanelCategoriesRoute
   '/hpanel/docs': typeof HpanelDocsRoute
   '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/prd-categories': typeof HpanelPrdCategoriesRoute
+  '/hpanel/prds': typeof HpanelPrdsRoute
   '/hpanel/settings': typeof HpanelSettingsRoute
   '/hpanel/skills': typeof HpanelSkillsRoute
+  '/hpanel/submissions': typeof HpanelSubmissionsRoute
+  '/prd/$slug': typeof PrdSlugRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs/': typeof DocsIndexRoute
   '/hpanel/': typeof HpanelIndexRoute
@@ -175,6 +220,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/hpanel'
+    | '/prds'
     | '/skills'
     | '/submit'
     | '/docs/create'
@@ -185,14 +231,19 @@ export interface FileRouteTypes {
     | '/hpanel/categories'
     | '/hpanel/docs'
     | '/hpanel/import'
+    | '/hpanel/prd-categories'
+    | '/hpanel/prds'
     | '/hpanel/settings'
     | '/hpanel/skills'
+    | '/hpanel/submissions'
+    | '/prd/$slug'
     | '/skill/$skillId'
     | '/docs/'
     | '/hpanel/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/prds'
     | '/skills'
     | '/submit'
     | '/docs/create'
@@ -203,8 +254,12 @@ export interface FileRouteTypes {
     | '/hpanel/categories'
     | '/hpanel/docs'
     | '/hpanel/import'
+    | '/hpanel/prd-categories'
+    | '/hpanel/prds'
     | '/hpanel/settings'
     | '/hpanel/skills'
+    | '/hpanel/submissions'
+    | '/prd/$slug'
     | '/skill/$skillId'
     | '/docs'
     | '/hpanel'
@@ -212,6 +267,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/hpanel'
+    | '/prds'
     | '/skills'
     | '/submit'
     | '/docs/create'
@@ -222,8 +278,12 @@ export interface FileRouteTypes {
     | '/hpanel/categories'
     | '/hpanel/docs'
     | '/hpanel/import'
+    | '/hpanel/prd-categories'
+    | '/hpanel/prds'
     | '/hpanel/settings'
     | '/hpanel/skills'
+    | '/hpanel/submissions'
+    | '/prd/$slug'
     | '/skill/$skillId'
     | '/docs/'
     | '/hpanel/'
@@ -232,12 +292,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HpanelRoute: typeof HpanelRouteWithChildren
+  PrdsRoute: typeof PrdsRoute
   SkillsRoute: typeof SkillsRoute
   SubmitRoute: typeof SubmitRoute
   DocsCreateRoute: typeof DocsCreateRoute
   DocsIntegrateRoute: typeof DocsIntegrateRoute
   DocsSpecificationRoute: typeof DocsSpecificationRoute
   DocsWhatAreSkillsRoute: typeof DocsWhatAreSkillsRoute
+  PrdSlugRoute: typeof PrdSlugRoute
   SkillSkillIdRoute: typeof SkillSkillIdRoute
   DocsIndexRoute: typeof DocsIndexRoute
 }
@@ -256,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/skills'
       fullPath: '/skills'
       preLoaderRoute: typeof SkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prds': {
+      id: '/prds'
+      path: '/prds'
+      fullPath: '/prds'
+      preLoaderRoute: typeof PrdsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hpanel': {
@@ -293,6 +362,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkillSkillIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prd/$slug': {
+      id: '/prd/$slug'
+      path: '/prd/$slug'
+      fullPath: '/prd/$slug'
+      preLoaderRoute: typeof PrdSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hpanel/submissions': {
+      id: '/hpanel/submissions'
+      path: '/submissions'
+      fullPath: '/hpanel/submissions'
+      preLoaderRoute: typeof HpanelSubmissionsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
     '/hpanel/skills': {
       id: '/hpanel/skills'
       path: '/skills'
@@ -305,6 +388,20 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/hpanel/settings'
       preLoaderRoute: typeof HpanelSettingsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/prds': {
+      id: '/hpanel/prds'
+      path: '/prds'
+      fullPath: '/hpanel/prds'
+      preLoaderRoute: typeof HpanelPrdsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/prd-categories': {
+      id: '/hpanel/prd-categories'
+      path: '/prd-categories'
+      fullPath: '/hpanel/prd-categories'
+      preLoaderRoute: typeof HpanelPrdCategoriesRouteImport
       parentRoute: typeof HpanelRoute
     }
     '/hpanel/import': {
@@ -371,8 +468,11 @@ interface HpanelRouteChildren {
   HpanelCategoriesRoute: typeof HpanelCategoriesRoute
   HpanelDocsRoute: typeof HpanelDocsRoute
   HpanelImportRoute: typeof HpanelImportRoute
+  HpanelPrdCategoriesRoute: typeof HpanelPrdCategoriesRoute
+  HpanelPrdsRoute: typeof HpanelPrdsRoute
   HpanelSettingsRoute: typeof HpanelSettingsRoute
   HpanelSkillsRoute: typeof HpanelSkillsRoute
+  HpanelSubmissionsRoute: typeof HpanelSubmissionsRoute
   HpanelIndexRoute: typeof HpanelIndexRoute
 }
 
@@ -381,8 +481,11 @@ const HpanelRouteChildren: HpanelRouteChildren = {
   HpanelCategoriesRoute: HpanelCategoriesRoute,
   HpanelDocsRoute: HpanelDocsRoute,
   HpanelImportRoute: HpanelImportRoute,
+  HpanelPrdCategoriesRoute: HpanelPrdCategoriesRoute,
+  HpanelPrdsRoute: HpanelPrdsRoute,
   HpanelSettingsRoute: HpanelSettingsRoute,
   HpanelSkillsRoute: HpanelSkillsRoute,
+  HpanelSubmissionsRoute: HpanelSubmissionsRoute,
   HpanelIndexRoute: HpanelIndexRoute,
 }
 
@@ -392,12 +495,14 @@ const HpanelRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HpanelRoute: HpanelRouteWithChildren,
+  PrdsRoute: PrdsRoute,
   SkillsRoute: SkillsRoute,
   SubmitRoute: SubmitRoute,
   DocsCreateRoute: DocsCreateRoute,
   DocsIntegrateRoute: DocsIntegrateRoute,
   DocsSpecificationRoute: DocsSpecificationRoute,
   DocsWhatAreSkillsRoute: DocsWhatAreSkillsRoute,
+  PrdSlugRoute: PrdSlugRoute,
   SkillSkillIdRoute: SkillSkillIdRoute,
   DocsIndexRoute: DocsIndexRoute,
 }

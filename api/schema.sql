@@ -28,7 +28,10 @@ CREATE TABLE IF NOT EXISTS skills (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     indexed_at TEXT DEFAULT CURRENT_TIMESTAMP,
     is_verified INTEGER DEFAULT 0,
-    is_featured INTEGER DEFAULT 0
+    is_featured INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'published', -- published, pending, invalid
+    submitter_name TEXT,
+    submitter_email TEXT
 );
 
 -- Full-text search index
@@ -98,3 +101,68 @@ CREATE INDEX IF NOT EXISTS idx_skills_stars ON skills(github_stars DESC);
 CREATE INDEX IF NOT EXISTS idx_skills_installs ON skills(install_count DESC);
 CREATE INDEX IF NOT EXISTS idx_skills_featured ON skills(is_featured);
 CREATE INDEX IF NOT EXISTS idx_installs_skill ON installs(skill_id);
+
+-- Skill Submissions table
+CREATE TABLE IF NOT EXISTS skill_submissions (
+    id TEXT PRIMARY KEY,
+    github_url TEXT NOT NULL,
+    submitter_name TEXT,
+    submitter_email TEXT,
+    status TEXT DEFAULT 'pending', -- pending, approved, rejected
+    submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    review_notes TEXT,
+    submitter_ip TEXT,
+    user_agent TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_status ON skill_submissions(status);
+
+-- PRDs table - PRD/Specs Registry
+CREATE TABLE IF NOT EXISTS prds (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT DEFAULT 'other',
+    tags TEXT, -- JSON array
+    author TEXT,
+    version TEXT DEFAULT '1.0.0',
+    file_path TEXT NOT NULL,
+    view_count INTEGER DEFAULT 0,
+    download_count INTEGER DEFAULT 0,
+    like_count INTEGER DEFAULT 0,
+    review_count INTEGER DEFAULT 0,
+    share_count INTEGER DEFAULT 0,
+    issue_count INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'published'
+);
+
+-- PRD Categories
+CREATE TABLE IF NOT EXISTS prd_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    icon TEXT,
+    prd_count INTEGER DEFAULT 0
+);
+
+-- Insert default PRD categories
+INSERT OR IGNORE INTO prd_categories (id, name, description, icon) VALUES
+    ('business', 'Business', 'Business applications and enterprise solutions', '💼'),
+    ('health', 'Health', 'Healthcare and medical applications', '🏥'),
+    ('education', 'Education', 'Learning and educational platforms', '📚'),
+    ('productivity', 'Productivity', 'Productivity and workflow tools', '⚡'),
+    ('developer', 'Developer', 'Developer tools and technical specs', '💻'),
+    ('creative', 'Creative', 'Design and creative applications', '🎨'),
+    ('operations', 'Operations', 'Operations and logistics systems', '🔧'),
+    ('consumer', 'Consumer', 'Consumer-facing applications', '🛒'),
+    ('other', 'Other', 'Miscellaneous specifications', '📋');
+
+-- Indexes for PRD queries
+CREATE INDEX IF NOT EXISTS idx_prds_category ON prds(category);
+CREATE INDEX IF NOT EXISTS idx_prds_slug ON prds(slug);
+CREATE INDEX IF NOT EXISTS idx_prds_views ON prds(view_count DESC);
+CREATE INDEX IF NOT EXISTS idx_prds_likes ON prds(like_count DESC);
+

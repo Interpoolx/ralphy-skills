@@ -2,6 +2,10 @@
 @plugin "@tailwindcss/typography";
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply antialiased text-slate-900 bg-white;
   }

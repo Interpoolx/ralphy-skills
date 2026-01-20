@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { SkillsList } from '../components/SkillsList'
 import type { MarketplaceData, Skill } from '../types'
 import { API_URL } from '../constants'
+import { SEO } from '../components/SEO'
 
 export const Route = createFileRoute('/skills')({
     component: SkillsPage,
@@ -76,6 +77,11 @@ function SkillsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
+            <SEO
+                title="Skills Directory"
+                description="Browse and search the official collection of Ralphy skills. Enhance your AI coding assistant with specialized knowledge."
+                keywords={['ralphy', 'skills', 'ai', 'coding assistant', 'marketplace', 'registry']}
+            />
             <div className="mx-auto max-w-7xl px-6 lg:px-8 py-12">
                 <div className="border-b border-gray-200 pb-5 mb-8">
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">

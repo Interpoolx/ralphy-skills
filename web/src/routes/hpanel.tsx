@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, useLocation } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { Toaster } from 'sonner'
 
 export const Route = createFileRoute('/hpanel')({
     component: HPanelLayout,
@@ -18,10 +19,18 @@ function HPanelLayout() {
     }, [])
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>
-    if (!isAuthenticated) return <LoginPage onLogin={() => setIsAuthenticated(true)} />
+    if (!isAuthenticated) return (
+        <>
+            <LoginPage onLogin={() => setIsAuthenticated(true)} />
+            <Toaster position="top-center" richColors />
+        </>
+    )
 
     return (
-        <AdminLayout onLogout={() => { sessionStorage.removeItem(AUTH_KEY); setIsAuthenticated(false) }} />
+        <>
+            <AdminLayout onLogout={() => { sessionStorage.removeItem(AUTH_KEY); setIsAuthenticated(false) }} />
+            <Toaster position="top-center" richColors />
+        </>
     )
 }
 
@@ -71,8 +80,11 @@ function AdminLayout({ onLogout }: { onLogout: () => void }) {
 
     const navItems = [
         { icon: '📊', label: 'Dashboard', path: '/hpanel' },
+        { icon: '📥', label: 'Submissions', path: '/hpanel/submissions' },
         { icon: '📦', label: 'Skills', path: '/hpanel/skills' },
-        { icon: '📁', label: 'Categories', path: '/hpanel/categories' },
+        { icon: '📁', label: 'Skill Categories', path: '/hpanel/categories' },
+        { icon: '📋', label: 'PRDs', path: '/hpanel/prds' },
+        { icon: '📂', label: 'PRD Categories', path: '/hpanel/prd-categories' },
         { icon: '⚙️', label: 'Settings', path: '/hpanel/settings' },
         { icon: '📚', label: 'Docs', path: '/hpanel/docs' },
     ]

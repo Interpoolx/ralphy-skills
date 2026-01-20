@@ -3,8 +3,10 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import { drizzle } from 'drizzle-orm/d1'
-import { skills, installs, categories } from './db/schema'
+import { skills, installs, categories, skillSubmissions, NewSkillSubmission, prds, prdCategories } from './db/schema'
 import { eq, like, desc, asc, sql, or } from 'drizzle-orm'
+import { z } from 'zod'
+import { extractSkillFromGithub } from './utils/github'
 
 // Types
 interface Env {
@@ -59,6 +61,7 @@ app.get('/api/search', async (c) => {
     const source = c.req.query('source')
     const namespace = c.req.query('namespace')
     const author = c.req.query('author')
+    const status = c.req.query('status')
     const limit = Math.min(parseInt(c.req.query('limit') || '20'), 20000)
     const page = parseInt(c.req.query('page') || '1')
     const offset = (page - 1) * limit
@@ -89,6 +92,12 @@ app.get('/api/search', async (c) => {
             whereClause.push("author = ?")
             params.push(author)
         }
+        if (status) {
+            whereClause.push("status = ?")
+            params.push(status)
+        } else {
+            whereClause.push("status = 'published'")
+        }
 
         const whereSql = whereClause.length > 0 ? `WHERE ${whereClause.join(' AND ')}` : ''
 
@@ -114,7 +123,7 @@ app.get('/api/search', async (c) => {
         } else {
             const allResults = await c.env.DB.prepare(`
                 SELECT * FROM skills
-                ${whereSql}
+                WHERE ${whereClause.join(' AND ')}
                 ORDER BY ${sortBy === 'stars' ? 'github_stars DESC' :
                     sortBy === 'installs' ? 'install_count DESC' :
                         sortBy === 'name' ? 'name ASC' : 'install_count DESC'}
@@ -157,7 +166,9 @@ app.get('/api/skills/:id', async (c) => {
     const id = c.req.param('id')
 
     try {
-        const skill = await db.select().from(skills).where(eq(skills.id, id)).get()
+        const skill = await db.select().from(skills)
+            .where(sql`${skills.id} = ${id} AND ${skills.status} = 'published'`)
+            .get()
 
         if (!skill) {
             return c.json({ error: 'Skill not found' }, 404)
@@ -312,7 +323,7 @@ app.get('/api/stats/filter-options', async (c) => {
 app.get('/api/featured', async (c) => {
     try {
         const featured = await c.env.DB.prepare(`
-            SELECT * FROM skills WHERE is_featured = 1 ORDER BY install_count DESC LIMIT 10
+            SELECT * FROM skills WHERE is_featured = 1 AND status = 'published' ORDER BY install_count DESC LIMIT 10
         `).all()
 
         return c.json(featured.results)
@@ -440,6 +451,220 @@ app.post('/api/admin/import', async (c) => {
     return c.json({ imported, errors, total: skillsToImport.length })
 })
 
+// ================== SKILL SUBMISSIONS ==================
+
+// SUBMIT// CREATE SUBMISSION
+app.post('/api/submissions', async (c) => {
+    const db = drizzle(c.env.DB)
+    const body = await c.req.json<NewSkillSubmission>()
+
+    // Simple validation
+    const submissionSchema = z.object({
+        githubUrl: z.string().url().refine(url => url.includes('github.com'), "Must be a GitHub URL"),
+        submitterName: z.string().optional(),
+        submitterEmail: z.string().email().optional().or(z.literal('')),
+    })
+
+    const result = submissionSchema.safeParse(body)
+    if (!result.success) {
+        return c.json({ error: result.error.flatten() }, 400)
+    }
+
+    // Capture IP and User Agent
+    const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-forwarded-for') || 'unknown'
+    const ua = c.req.header('User-Agent') || 'unknown'
+
+    try {
+        // 1. Check for duplicates (by URL)
+        const existingSkill = await db.select().from(skills)
+            .where(eq(skills.githubUrl, result.data.githubUrl))
+            .get();
+
+        if (existingSkill) {
+            return c.json({
+                error: 'This skill repository has already been submitted or is already in our directory.'
+            }, 400);
+        }
+
+        // 2. Extract metadata from GitHub - now strictly validates existence
+        let extracted;
+        try {
+            extracted = await extractSkillFromGithub(result.data.githubUrl, c.env.GITHUB_TOKEN);
+        } catch (err) {
+            return c.json({
+                error: err instanceof Error ? err.message : 'Invalid GitHub URL or repository not found'
+            }, 400);
+        }
+
+        const skillId = extracted.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || crypto.randomUUID();
+
+        // 3. Check for duplicates (by ID - secondary check)
+        const existingById = await db.select().from(skills).where(eq(skills.id, skillId)).get();
+        if (existingById) {
+            return c.json({
+                error: `A skill with the name "${extracted.name}" already exists. If this is a different skill, please ensure the name in SKILL.md is unique.`
+            }, 400);
+        }
+
+        const skillData = {
+            id: skillId,
+            name: extracted.name || 'New Skill',
+            description: extracted.description || 'Description pending...',
+            githubUrl: result.data.githubUrl,
+            githubOwner: extracted.githubOwner || null,
+            githubRepo: extracted.githubRepo || null,
+            author: extracted.author || result.data.submitterName || 'Community',
+            version: extracted.version || '1.0.0',
+            license: extracted.license || null,
+            tags: JSON.stringify(extracted.tags || []),
+            status: 'pending',
+            submitterName: result.data.submitterName,
+            submitterEmail: result.data.submitterEmail,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        // We still save to skillSubmissions for backward compat if needed, 
+        // but now we also create a 'pending' skill record
+        const submission = {
+            id: crypto.randomUUID(),
+            githubUrl: result.data.githubUrl,
+            submitterName: result.data.submitterName,
+            submitterEmail: result.data.submitterEmail,
+            submittedAt: new Date().toISOString(),
+            status: 'pending',
+            submitterIp: ip,
+            userAgent: ua
+        }
+
+        await db.batch([
+            db.insert(skills).values(skillData as any).onConflictDoNothing(),
+            db.insert(skillSubmissions).values(submission)
+        ]);
+
+        return c.json({ success: true, id: submission.id, skillId })
+    } catch (error) {
+        console.error('Submission error:', error);
+        return c.json({ error: 'Failed to create submission' }, 500)
+    }
+})
+
+// ADMIN: GET SUBMISSIONS
+app.get('/api/admin/submissions', async (c) => {
+    const db = drizzle(c.env.DB)
+    // sort by submittedAt desc
+    const results = await db.select().from(skillSubmissions).orderBy(desc(skillSubmissions.submittedAt)).all()
+    return c.json(results)
+})
+
+// ADMIN: DELETE SUBMISSION
+app.delete('/api/admin/submissions/:id', async (c) => {
+    const db = drizzle(c.env.DB)
+    const id = c.req.param('id')
+
+    try {
+        await db.delete(skillSubmissions).where(eq(skillSubmissions.id, id))
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ error: 'Failed to delete submission' }, 500)
+    }
+})
+// REJECT SUBMISSION (Admin)
+app.post('/api/admin/submissions/:id/reject', async (c) => {
+    const db = drizzle(c.env.DB)
+    const id = c.req.param('id')
+    const body = await c.req.json().catch(() => ({}))
+    const notes = body.notes || ''
+
+    try {
+        await db.update(skillSubmissions)
+            .set({ status: 'rejected', reviewNotes: notes })
+            .where(eq(skillSubmissions.id, id))
+
+        return c.json({ success: true, message: 'Submission rejected' })
+    } catch (error) {
+        return c.json({ error: 'Failed to reject submission' }, 500)
+    }
+})
+
+// APPROVE SUBMISSION (Admin)
+app.post('/api/admin/submissions/:id/approve', async (c) => {
+    const db = drizzle(c.env.DB)
+    const id = c.req.param('id')
+
+    try {
+        // 1. Get submission
+        const submission = await db.select().from(skillSubmissions).where(eq(skillSubmissions.id, id)).get()
+        if (!submission) return c.json({ error: 'Submission not found' }, 404)
+
+        if (submission.status === 'approved') {
+            return c.json({ success: true, message: 'Already approved' })
+        }
+
+        // 2. Parse GitHub URL for basic info (or use Overrides)
+        const body = await c.req.json().catch(() => ({}))
+        const githubUrl = submission.githubUrl
+
+        let repo = 'unknown'
+        let owner = 'unknown'
+
+        // Use overrides if provided, otherwise parse
+        if (body.name) {
+            repo = body.name
+        } else {
+            const githubMatch = githubUrl.match(/github\.com\/([^/]+)\/([^/]+)/)
+            owner = githubMatch?.[1] || 'unknown'
+            repo = githubMatch?.[2]?.replace(/\.git$/, '') || 'unknown'
+        }
+
+        if (!owner || owner === 'unknown') {
+            const githubMatch = githubUrl.match(/github\.com\/([^/]+)\/([^/]+)/)
+            owner = githubMatch?.[1] || 'unknown'
+        }
+
+        const skillId = body.id || repo.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        const namespace = body.namespace || `${owner}/${repo}`
+        const category = body.category || 'general'
+
+        // 3. Insert into Skills table (Best effort, Admin overrides applied)
+        // We use raw SQL for simplicity with D1
+        await c.env.DB.prepare(`
+            INSERT INTO skills (id, name, namespace, description, category, tags, author, version, github_url, github_owner, github_repo, import_source, platform, created_at, updated_at, is_verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                github_url = excluded.github_url,
+                updated_at = datetime('now')
+        `).bind(
+            skillId,
+            body.name || repo,
+            namespace,
+            `Submitted by ${submission.submitterName || 'community'}. Description pending.`,
+            category,
+            '[]', // Default tags
+            submission.submitterName || owner, // Author
+            '1.0.0',
+            githubUrl,
+            owner,
+            repo,
+            'submission',
+            'global',
+            new Date().toISOString(),
+            new Date().toISOString(),
+            0 // Verified? No
+        ).run()
+
+        // 4. Update Submission Status
+        await db.update(skillSubmissions)
+            .set({ status: 'approved' })
+            .where(eq(skillSubmissions.id, id))
+
+        return c.json({ success: true, message: 'Submission approved and added to Skills database.' })
+    } catch (error) {
+        console.error('Approve error:', error)
+        return c.json({ error: 'Failed to approve submission' }, 500)
+    }
+})
+
 // ================== EXPORT SKILLS (ADMIN) ==================
 app.get('/api/admin/export', async (c) => {
     try {
@@ -464,6 +689,75 @@ app.delete('/api/admin/skills/:id', async (c) => {
         console.error('Delete error:', error)
         return c.json({ error: 'Failed to delete skill' }, 500)
     }
+})
+
+// ================== BULK DELETE SKILLS ==================
+app.post('/api/admin/skills/bulk-delete', async (c) => {
+    const db = drizzle(c.env.DB)
+    const body = await c.req.json()
+    const ids = body.ids
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return c.json({ error: 'No IDs provided' }, 400)
+    }
+
+    try {
+        await c.env.DB.prepare(`
+            DELETE FROM skills WHERE id IN (${ids.map(() => '?').join(',')})
+        `).bind(...ids).run()
+
+        return c.json({ success: true, message: `${ids.length} skills deleted` })
+    } catch (error) {
+        console.error('Bulk delete error:', error)
+        return c.json({ error: 'Failed to bulk delete skills' }, 500)
+    }
+})
+
+// ================== GET ALL SKILL IDS ==================
+app.get('/api/admin/skills/ids', async (c) => {
+    const db = drizzle(c.env.DB)
+    const allIds = await db.select({ id: skills.id }).from(skills).all()
+    return c.json({ ids: allIds.map(s => s.id) })
+})
+
+// ================== VALIDATE SKILL URLS (CHUNKED) ==================
+app.post('/api/admin/skills/validate', async (c) => {
+    const db = drizzle(c.env.DB)
+    const body = await c.req.json()
+    const ids = body.ids
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return c.json({ error: 'No IDs provided' }, 400)
+    }
+
+    // Fetch only the requested skills
+    const targets = await c.env.DB.prepare(`
+        SELECT id, github_url, status FROM skills WHERE id IN (${ids.map(() => '?').join(',')})
+    `).bind(...ids).all()
+
+    let validCount = 0
+    let invalidCount = 0
+
+    for (const skill of targets.results as any[]) {
+        try {
+            const res = await fetch(skill.github_url, { method: 'HEAD' })
+            const status = res.ok ? 'published' : 'invalid'
+
+            if (status !== skill.status) {
+                await db.update(skills).set({ status }).where(eq(skills.id, skill.id))
+                if (status === 'invalid') invalidCount++
+                else validCount++
+            } else {
+                if (status === 'published') validCount++
+                else invalidCount++
+            }
+        } catch (error) {
+            await db.update(skills).set({ status: 'invalid' }).where(eq(skills.id, skill.id))
+            invalidCount++
+        }
+    }
+
+    return c.json({ success: true, validCount, invalidCount })
 })
 
 // ================== UPDATE SKILL ==================
@@ -493,6 +787,437 @@ app.patch('/api/admin/skills/:id', async (c) => {
     } catch (error) {
         console.error('Update error:', error)
         return c.json({ error: 'Failed to update skill' }, 500)
+    }
+})
+
+// ================== PRD ENDPOINTS ==================
+
+// LIST PRDs
+app.get('/api/prds', async (c) => {
+    const category = c.req.query('category')
+    const search = c.req.query('q') || ''
+    const sortBy = c.req.query('sort') || 'views'
+    const limit = Math.min(parseInt(c.req.query('limit') || '20'), 100)
+    const page = parseInt(c.req.query('page') || '1')
+    const offset = (page - 1) * limit
+
+    try {
+        let whereClause = [`status = 'published'`]
+        let params: (string | number)[] = []
+
+        if (category) {
+            whereClause.push('category = ?')
+            params.push(category)
+        }
+
+        if (search) {
+            whereClause.push('(name LIKE ? OR description LIKE ? OR tags LIKE ?)')
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`)
+        }
+
+        const orderBy = sortBy === 'views' ? 'view_count DESC' :
+            sortBy === 'likes' ? 'like_count DESC' :
+                sortBy === 'recent' ? 'created_at DESC' :
+                    sortBy === 'name' ? 'name ASC' : 'view_count DESC'
+
+        const results = await c.env.DB.prepare(`
+            SELECT * FROM prds WHERE ${whereClause.join(' AND ')}
+            ORDER BY ${orderBy}
+            LIMIT ? OFFSET ?
+        `).bind(...params, limit, offset).all()
+
+        const countResult = await c.env.DB.prepare(`
+            SELECT COUNT(*) as total FROM prds WHERE ${whereClause.join(' AND ')}
+        `).bind(...params).first<{ total: number }>()
+
+        return c.json({
+            prds: results.results,
+            pagination: {
+                page,
+                limit,
+                total: countResult?.total || 0,
+                hasMore: offset + limit < (countResult?.total || 0)
+            }
+        })
+    } catch (error) {
+        console.error('PRDs list error:', error)
+        return c.json({ error: 'Failed to list PRDs', prds: [] }, 500)
+    }
+})
+
+// GET PRD CATEGORIES - MUST BE BEFORE :identifier route
+app.get('/api/prds/categories', async (c) => {
+    try {
+        const categories = await c.env.DB.prepare(`
+            SELECT pc.*, COUNT(p.id) as prd_count 
+            FROM prd_categories pc
+            LEFT JOIN prds p ON pc.id = p.category AND p.status = 'published'
+            GROUP BY pc.id
+            ORDER BY pc.name
+        `).all()
+
+        return c.json(categories.results)
+    } catch (error) {
+        console.error('PRD categories error:', error)
+        return c.json({ error: 'Failed to get categories' }, 500)
+    }
+})
+
+// GET PRD BY SLUG OR ID
+app.get('/api/prds/:identifier', async (c) => {
+    const identifier = c.req.param('identifier')
+
+    try {
+        const prd = await c.env.DB.prepare(`
+            SELECT * FROM prds WHERE (slug = ? OR id = ?) AND status = 'published'
+        `).bind(identifier, identifier).first()
+
+        if (!prd) {
+            return c.json({ error: 'PRD not found' }, 404)
+        }
+
+        return c.json(prd)
+    } catch (error) {
+        console.error('Get PRD error:', error)
+        return c.json({ error: 'Failed to get PRD' }, 500)
+    }
+})
+
+// INCREMENT VIEW COUNT
+app.post('/api/prds/:identifier/view', async (c) => {
+    const identifier = c.req.param('identifier')
+
+    try {
+        await c.env.DB.prepare(`
+            UPDATE prds SET view_count = view_count + 1 WHERE slug = ? OR id = ?
+        `).bind(identifier, identifier).run()
+
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ error: 'Failed to track view' }, 500)
+    }
+})
+
+// INCREMENT LIKE COUNT
+app.post('/api/prds/:identifier/like', async (c) => {
+    const identifier = c.req.param('identifier')
+
+    try {
+        await c.env.DB.prepare(`
+            UPDATE prds SET like_count = like_count + 1 WHERE slug = ? OR id = ?
+        `).bind(identifier, identifier).run()
+
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ error: 'Failed to track like' }, 500)
+    }
+})
+
+// INCREMENT DOWNLOAD COUNT
+app.post('/api/prds/:identifier/download', async (c) => {
+    const identifier = c.req.param('identifier')
+
+    try {
+        const prd = await c.env.DB.prepare(`
+            SELECT file_path FROM prds WHERE slug = ? OR id = ?
+        `).bind(identifier, identifier).first<{ file_path: string }>()
+
+        if (!prd) {
+            return c.json({ error: 'PRD not found' }, 404)
+        }
+
+        await c.env.DB.prepare(`
+            UPDATE prds SET download_count = download_count + 1 WHERE slug = ? OR id = ?
+        `).bind(identifier, identifier).run()
+
+        return c.json({ success: true, filePath: prd.file_path })
+    } catch (error) {
+        return c.json({ error: 'Failed to track download' }, 500)
+    }
+})
+
+// ADMIN: IMPORT PRDs
+app.post('/api/admin/prds/import', async (c) => {
+    const body = await c.req.json()
+    const prdsToImport = body.prds || []
+
+    if (!Array.isArray(prdsToImport)) {
+        return c.json({ error: 'Invalid prds array' }, 400)
+    }
+
+    let imported = 0
+    let errors = 0
+
+    for (const prd of prdsToImport) {
+        try {
+            const slug = prd.slug || prd.name?.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || ''
+
+            if (!slug || !prd.name || !prd.filePath) {
+                console.log('Skipping PRD without required fields:', prd.name)
+                errors++
+                continue
+            }
+
+            await c.env.DB.prepare(`
+                INSERT INTO prds (id, slug, name, description, category, tags, author, version, file_path, content, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    description = excluded.description,
+                    file_path = excluded.file_path,
+                    content = excluded.content,
+                    updated_at = datetime('now')
+            `).bind(
+                prd.id || crypto.randomUUID(),
+                slug,
+                prd.name,
+                prd.description || '',
+                prd.category || 'other',
+                JSON.stringify(prd.tags || []),
+                prd.author || 'Community',
+                prd.version || '1.0.0',
+                prd.filePath,
+                prd.content || '', // New content field
+                prd.createdAt || new Date().toISOString(),
+                new Date().toISOString()
+            ).run()
+
+            imported++
+        } catch (error) {
+            console.error('Import PRD error:', prd.name, error)
+            errors++
+        }
+    }
+
+    return c.json({ imported, errors, total: prdsToImport.length })
+})
+
+// ADMIN: DELETE PRD
+app.delete('/api/admin/prds/:id', async (c) => {
+    const id = c.req.param('id')
+
+    try {
+        await c.env.DB.prepare('DELETE FROM prds WHERE id = ?').bind(id).run()
+        return c.json({ success: true, message: 'PRD deleted' })
+    } catch (error) {
+        console.error('Delete PRD error:', error)
+        return c.json({ error: 'Failed to delete PRD' }, 500)
+    }
+})
+
+// ADMIN: BULK DELETE PRDs
+app.post('/api/admin/prds/bulk-delete', async (c) => {
+    const body = await c.req.json()
+    const ids = body.ids
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return c.json({ error: 'No IDs provided' }, 400)
+    }
+
+    try {
+        await c.env.DB.prepare(`
+            DELETE FROM prds WHERE id IN (${ids.map(() => '?').join(',')})
+        `).bind(...ids).run()
+
+        return c.json({ success: true, message: `${ids.length} PRDs deleted` })
+    } catch (error) {
+        console.error('Bulk delete PRDs error:', error)
+        return c.json({ error: 'Failed to bulk delete PRDs' }, 500)
+    }
+})
+
+// ADMIN: GET PRD BY ID (for editor)
+app.get('/api/admin/prds/:id', async (c) => {
+    const id = c.req.param('id')
+    try {
+        const result = await c.env.DB.prepare('SELECT * FROM prds WHERE id = ?').bind(id).first()
+        if (!result) return c.json({ error: 'PRD not found' }, 404)
+        return c.json(result)
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch PRD' }, 500)
+    }
+})
+
+// ADMIN: UPDATE PRD
+app.patch('/api/admin/prds/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json()
+
+    try {
+        const results = await c.env.DB.prepare(`
+            UPDATE prds SET
+                name = COALESCE(?, name),
+                description = COALESCE(?, description),
+                category = COALESCE(?, category),
+                author = COALESCE(?, author),
+                version = COALESCE(?, version),
+                tags = COALESCE(?, tags),
+                file_path = COALESCE(?, file_path),
+                content = ?,
+                status = COALESCE(?, status),
+                updated_at = datetime('now')
+            WHERE id = ? OR slug = ?
+        `).bind(
+            body.name || null,
+            body.description || null,
+            body.category || null,
+            body.author || null,
+            body.version || null,
+            body.tags ? JSON.stringify(body.tags) : null,
+            body.file_path || null,
+            body.content !== undefined ? body.content : null, // Allow empty string update
+            body.status || null,
+            id,
+            id // Bind id to both id and slug check
+        ).run()
+
+        if (results.meta.changes === 0) {
+            // If it was a content-only update where content didn't change, changes implies 0
+            // But we can check if the row exists
+            const exists = await c.env.DB.prepare('SELECT 1 FROM prds WHERE id = ? OR slug = ?').bind(id, id).first()
+            if (!exists) {
+                return c.json({ error: 'PRD not found' }, 404)
+            }
+        }
+
+        return c.json({ success: true, message: 'PRD updated' })
+    } catch (error) {
+        console.error('Update PRD error:', error)
+        return c.json({ error: 'Failed to update PRD' }, 500)
+    }
+})
+
+// ADMIN: GET ALL PRD IDS
+app.get('/api/admin/prds/ids', async (c) => {
+    try {
+        const result = await c.env.DB.prepare('SELECT id FROM prds').all()
+        return c.json({ ids: result.results.map((r: any) => r.id) })
+    } catch (error) {
+        return c.json({ error: 'Failed to get PRD IDs' }, 500)
+    }
+})
+
+// ADMIN: SEARCH PRDs (for admin panel)
+app.get('/api/admin/prds', async (c) => {
+    const category = c.req.query('category') || ''
+    const search = c.req.query('q') || ''
+    const status = c.req.query('status') || ''
+    const sortBy = c.req.query('sort') || 'views'
+    const limit = Math.min(parseInt(c.req.query('limit') || '25'), 100)
+    const page = parseInt(c.req.query('page') || '1')
+    const offset = (page - 1) * limit
+
+    try {
+        let whereClause: string[] = []
+        let params: (string | number)[] = []
+
+        if (category) {
+            whereClause.push('category = ?')
+            params.push(category)
+        }
+        if (status) {
+            whereClause.push('status = ?')
+            params.push(status)
+        }
+        if (search) {
+            whereClause.push('(name LIKE ? OR description LIKE ?)')
+            params.push(`%${search}%`, `%${search}%`)
+        }
+
+        const whereSql = whereClause.length > 0 ? `WHERE ${whereClause.join(' AND ')}` : ''
+        const orderBy = sortBy === 'views' ? 'view_count DESC' :
+            sortBy === 'likes' ? 'like_count DESC' :
+                sortBy === 'recent' ? 'created_at DESC' :
+                    sortBy === 'name' ? 'name ASC' : 'view_count DESC'
+
+        const results = await c.env.DB.prepare(`
+            SELECT * FROM prds ${whereSql}
+            ORDER BY ${orderBy}
+            LIMIT ? OFFSET ?
+        `).bind(...params, limit, offset).all()
+
+        const countResult = await c.env.DB.prepare(`
+            SELECT COUNT(*) as total FROM prds ${whereSql}
+        `).bind(...params).first<{ total: number }>()
+
+        return c.json({
+            prds: results.results,
+            pagination: {
+                page,
+                limit,
+                total: countResult?.total || 0,
+                hasMore: offset + limit < (countResult?.total || 0)
+            }
+        })
+    } catch (error) {
+        console.error('Admin PRDs list error:', error)
+        return c.json({ error: 'Failed to list PRDs', prds: [] }, 500)
+    }
+})
+
+// ADMIN: GET ALL PRD CATEGORIES
+app.get('/api/admin/prds/categories', async (c) => {
+    const db = drizzle(c.env.DB)
+    try {
+        const results = await db.select().from(prdCategories).all()
+        return c.json(results)
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch PRD categories' }, 500)
+    }
+})
+
+// ADMIN: CREATE PRD CATEGORY
+app.post('/api/admin/prds/categories', async (c) => {
+    const db = drizzle(c.env.DB)
+    try {
+        const body = await c.req.json()
+        const id = body.id || body.name.toLowerCase().replace(/\s+/g, '-')
+
+        await db.insert(prdCategories).values({
+            id,
+            name: body.name,
+            description: body.description || '',
+            icon: body.icon || 'DocumentTextIcon',
+            prdCount: 0
+        })
+
+        return c.json({ success: true, id })
+    } catch (error) {
+        return c.json({ error: 'Failed to create PRD category' }, 500)
+    }
+})
+
+// ADMIN: UPDATE PRD CATEGORY
+app.patch('/api/admin/prds/categories/:id', async (c) => {
+    const db = drizzle(c.env.DB)
+    const id = c.req.param('id')
+    try {
+        const body = await c.req.json()
+        await db.update(prdCategories)
+            .set({
+                name: body.name,
+                description: body.description,
+                icon: body.icon,
+            })
+            .where(eq(prdCategories.id, id))
+
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ error: 'Failed to update PRD category' }, 500)
+    }
+})
+
+// ADMIN: DELETE PRD CATEGORY
+app.delete('/api/admin/prds/categories/:id', async (c) => {
+    const db = drizzle(c.env.DB)
+    const id = c.req.param('id')
+    try {
+        await db.delete(prdCategories).where(eq(prdCategories.id, id))
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ error: 'Failed to delete PRD category' }, 500)
     }
 })
 

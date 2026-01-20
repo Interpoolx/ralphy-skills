@@ -9,7 +9,7 @@ export const API_CONFIGS = {
     },
     production: {
         label: 'Production',
-        url: 'https://ralphy-skills-api.workers.dev', // Update this after deployment
+        url: 'https://ralphy-skills-api.YOUR_SUBDOMAIN.workers.dev', // Update this after deployment
         description: 'Cloudflare Workers production'
     }
 }

@@ -1,133 +1,160 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { MARKETPLACE_URL } from '../constants'
-import type { MarketplaceData } from '../types'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { API_URL } from '../constants'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/submit')({
-  component: SubmitSkillPage,
+  component: SubmitPage,
 })
 
-function SubmitSkillPage() {
-  const [url, setUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isDuplicate, setIsDuplicate] = useState(false)
-  const [existingSkills, setExistingSkills] = useState<Set<string>>(new Set())
+const submissionSchema = z.object({
+  githubUrl: z
+    .string()
+    .url('Please enter a valid URL')
+    .includes('github.com', { message: 'Must be a GitHub URL' }),
+  submitterName: z.string().optional(),
+  submitterEmail: z.string().email('Invalid email address').optional().or(z.literal('')),
+})
 
-  useEffect(() => {
-    fetch(MARKETPLACE_URL)
-      .then(res => res.json())
-      .then((data: MarketplaceData) => {
-        const ids = new Set(data.skills.map(s => s.id))
-        setExistingSkills(ids)
-      })
-  }, [])
+type SubmissionForm = z.infer<typeof submissionSchema>
 
-  const checkDuplicate = (inputUrl: string) => {
-    // Extract ID from URL (naive check for now, can be improved)
-    // Expected format: .../skills/skill-id
+function SubmitPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<SubmissionForm>({
+    resolver: zodResolver(submissionSchema),
+    defaultValues: {
+      githubUrl: '',
+      submitterName: '',
+      submitterEmail: '',
+    },
+  })
+
+  const onSubmit = async (data: SubmissionForm) => {
+    setIsSubmitting(true)
+
     try {
-      const parts = inputUrl.split('/')
-      const potentialId = parts[parts.length - 1]
-      if (existingSkills.has(potentialId)) {
-        setIsDuplicate(true)
-        setError('This skill appears to already exist in the marketplace.')
-      } else {
-        setIsDuplicate(false)
-        setError(null)
+      const res = await fetch(`${API_URL}/api/submissions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to submit skill')
       }
-    } catch (e) {
-      // ignore invalid urls for now
+
+      toast.success('Skill submitted successfully!', {
+        description: 'Your skill is now pending review. It will appear in the directory once approved.',
+      })
+      reset()
+    } catch (error) {
+      toast.error('Submission failed', {
+        description: error instanceof Error ? error.message : 'Something went wrong',
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isDuplicate) return
-
-    if (!url.includes('github.com')) {
-      setError('Please provide a valid GitHub repository URL.')
-      return
-    }
-
-    // Open GitHub Issue with pre-filled body
-    const issueTitle = `New Skill Submission`
-    const issueBody = `### Skill Repository URL\n${url}\n\n### Description\n[Brief description of your skill]\n\n### Author\n@${'YOUR_GITHUB_USERNAME'}`
-    const submitUrl = `https://github.com/Interpoolx/ralphy-skills/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}`
-
-    window.open(submitUrl, '_blank')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Submit a New Skill
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Share your agent skill with the community.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Submit a Skill
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Share your Ralphy skill with the community. All submissions are reviewed before publishing.
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="bg-white py-8 px-6 shadow-xl rounded-2xl sm:px-10 border border-gray-100">
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            {/* GitHub URL */}
             <div>
-              <label htmlFor="url" className="block text-sm font-medium text-gray-700">
-                GitHub Repository URL
+              <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700">
+                GitHub Repository URL <span className="text-red-500">*</span>
               </label>
               <div className="mt-1">
                 <input
-                  id="url"
-                  name="url"
+                  id="githubUrl"
                   type="url"
-                  required
-                  value={url}
-                  onChange={(e) => {
-                    setUrl(e.target.value)
-                    checkDuplicate(e.target.value)
-                  }}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   placeholder="https://github.com/username/repo/tree/main/skills/my-skill"
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors.githubUrl ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  {...register('githubUrl')}
+                />
+                {errors.githubUrl && (
+                  <p className="mt-1 text-sm text-red-600">{errors.githubUrl.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Submitter Name */}
+            <div>
+              <label htmlFor="submitterName" className="block text-sm font-medium text-gray-700">
+                Your Name <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <div className="mt-1">
+                <input
+                  id="submitterName"
+                  type="text"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  {...register('submitterName')}
                 />
               </div>
-              {error && (
-                <p className="mt-2 text-sm text-red-600">
-                  {error}
-                </p>
-              )}
+            </div>
+
+            {/* Submitter Email */}
+            <div>
+              <label htmlFor="submitterEmail" className="block text-sm font-medium text-gray-700">
+                Email Address <span className="text-gray-400 font-normal">(Optional, for notifications)</span>
+              </label>
+              <div className="mt-1">
+                <input
+                  id="submitterEmail"
+                  type="email"
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors.submitterEmail ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                  {...register('submitterEmail')}
+                />
+                {errors.submitterEmail && (
+                  <p className="mt-1 text-sm text-red-600">{errors.submitterEmail.message}</p>
+                )}
+              </div>
             </div>
 
             <div>
               <button
                 type="submit"
-                disabled={isDuplicate}
-                className={`flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${isDuplicate
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-500'
-                  }`}
+                disabled={isSubmitting}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                Continue to GitHub
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit Skill'
+                )}
               </button>
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">How it works</span>
-              </div>
-            </div>
-
-            <div className="mt-6 text-sm text-gray-500 space-y-4">
-              <p>1. <strong>Paste your URL</strong>: We'll check if it's already in the marketplace.</p>
-              <p>2. <strong>Create an Issue</strong>: You'll be redirected to GitHub to open a submission issue.</p>
-              <p>3. <strong>Review</strong>: Our team (and Ralphy bot) will review and verify your skill.</p>
-              <p>4. <strong>Live!</strong>: Once approved, your skill will be available to everyone.</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

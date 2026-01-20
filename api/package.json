@@ -10,14 +10,15 @@
         "db:migrate:local": "wrangler d1 execute ralphy-skills-db --local --file=./schema.sql"
     },
     "dependencies": {
-        "hono": "^4.4.0",
         "drizzle-orm": "^0.31.0",
-        "gray-matter": "^4.0.3"
+        "gray-matter": "^4.0.3",
+        "hono": "^4.4.0",
+        "zod": "^4.3.5"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.20240529.0",
         "drizzle-kit": "^0.22.0",
-        "wrangler": "^3.60.0",
-        "typescript": "^5.5.0"
+        "typescript": "^5.5.0",
+        "wrangler": "^3.60.0"
     }
 }

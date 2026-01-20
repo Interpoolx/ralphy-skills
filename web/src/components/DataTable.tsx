@@ -24,6 +24,9 @@ interface DataTableProps<T> {
     onPageSizeChange?: (size: number) => void
     globalFilter?: string
     onGlobalFilterChange?: (filter: string) => void
+    rowSelection?: Record<string, boolean>
+    onRowSelectionChange?: (updater: any) => void
+    getRowId?: (row: T) => string
 }
 
 export function DataTable<T>({
@@ -38,6 +41,9 @@ export function DataTable<T>({
     onPageSizeChange,
     globalFilter: externalGlobalFilter,
     onGlobalFilterChange: onExternalGlobalFilterChange,
+    rowSelection,
+    onRowSelectionChange,
+    getRowId,
 }: DataTableProps<T>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -54,6 +60,7 @@ export function DataTable<T>({
             sorting,
             columnFilters,
             globalFilter: actualGlobalFilter,
+            rowSelection,
             ...(isManual ? { pagination: { pageIndex, pageSize } } : {})
         },
         initialState: {
@@ -62,10 +69,13 @@ export function DataTable<T>({
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setActualGlobalFilter,
+        onRowSelectionChange,
+        getRowId,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        enableRowSelection: true,
         manualPagination: isManual,
         pageCount: isManual ? Math.ceil(totalCount / pageSize) : undefined,
         onPaginationChange: (updater) => {

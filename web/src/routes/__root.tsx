@@ -1,5 +1,7 @@
 import { createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
+
+import { Toaster } from 'sonner'
 import { Footer } from '../components/Footer'
 import { useState } from 'react'
 
@@ -13,7 +15,9 @@ function RootComponent() {
 
     // Skip header/footer for admin panel
     if (location.pathname.startsWith('/hpanel')) {
-        return <Outlet />
+        return (
+            <Outlet />
+        )
     }
 
     return (
@@ -33,6 +37,27 @@ function RootComponent() {
                             >
                                 Home
                             </Link>
+
+
+                            <Link
+                                to="/skills"
+                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors [&.active]:text-blue-600"
+                            >
+                                Open Skills
+                            </Link>
+                            <Link
+                                to="/prds"
+                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors [&.active]:text-blue-600"
+                            >
+                                Open Specs
+                            </Link>
+                            <Link
+                                to="/submit"
+                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors [&.active]:text-blue-600"
+                            >
+                                Submit
+                            </Link>
+
 
                             {/* Docs Dropdown */}
                             <div className="relative">
@@ -82,18 +107,6 @@ function RootComponent() {
                                 )}
                             </div>
 
-                            <Link
-                                to="/skills"
-                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors [&.active]:text-blue-600"
-                            >
-                                Skills Directory
-                            </Link>
-                            <Link
-                                to="/submit"
-                                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors [&.active]:text-blue-600"
-                            >
-                                Submit Skill
-                            </Link>
                             <a
                                 href="https://www.npmjs.com/package/ralphy-skills"
                                 target="_blank"
@@ -110,6 +123,9 @@ function RootComponent() {
                             >
                                 Antigravity Kit
                             </a>
+
+
+
                         </div>
                     </div>
                 </div>
@@ -118,6 +134,7 @@ function RootComponent() {
                 <Outlet />
             </main>
             <Footer />
+            <Toaster position="top-center" />
             {import.meta.env.DEV && <TanStackRouterDevtools />}
         </div>
     )

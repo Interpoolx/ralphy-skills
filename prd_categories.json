@@ -1,0 +1,56 @@
+[
+    {
+        "id": "business",
+        "name": "Business",
+        "description": "Business applications and enterprise solutions",
+        "icon": "💼"
+    },
+    {
+        "id": "health",
+        "name": "Health",
+        "description": "Healthcare and medical applications",
+        "icon": "🏥"
+    },
+    {
+        "id": "education",
+        "name": "Education",
+        "description": "Learning and educational platforms",
+        "icon": "📚"
+    },
+    {
+        "id": "productivity",
+        "name": "Productivity",
+        "description": "Productivity and workflow tools",
+        "icon": "⚡"
+    },
+    {
+        "id": "developer",
+        "name": "Developer",
+        "description": "Developer tools and technical specs",
+        "icon": "💻"
+    },
+    {
+        "id": "creative",
+        "name": "Creative",
+        "description": "Design and creative applications",
+        "icon": "🎨"
+    },
+    {
+        "id": "operations",
+        "name": "Operations",
+        "description": "Operations and logistics systems",
+        "icon": "🔧"
+    },
+    {
+        "id": "consumer",
+        "name": "Consumer",
+        "description": "Consumer-facing applications",
+        "icon": "🛒"
+    },
+    {
+        "id": "other",
+        "name": "Other",
+        "description": "Miscellaneous specifications",
+        "icon": "📋"
+    }
+]
