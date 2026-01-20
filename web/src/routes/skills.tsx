@@ -1,29 +1,78 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { SkillsList } from '../components/SkillsList'
-import type { MarketplaceData } from '../types'
-import { MARKETPLACE_URL } from '../constants'
+import type { MarketplaceData, Skill } from '../types'
+import { API_URL } from '../constants'
 
 export const Route = createFileRoute('/skills')({
     component: SkillsPage,
 })
 
 function SkillsPage() {
-    const [data, setData] = useState<MarketplaceData | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(0)
+    const [limit] = useState(50)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [category, setCategory] = useState<string | null>(null)
+    const [provider, setProvider] = useState<string | null>(null)
+    const [sort, setSort] = useState<'installed' | 'recent' | 'name'>('installed')
 
-    useEffect(() => {
-        fetch(MARKETPLACE_URL)
-            .then((res) => res.json())
-            .then((data) => {
-                setData(data)
-                setLoading(false)
+    // Fetch skills with caching and server-side filtering
+    const { data: searchData, isLoading } = useQuery({
+        queryKey: ['public-skills', page, limit, searchQuery, category, provider, sort],
+        queryFn: async () => {
+            const params = new URLSearchParams({
+                limit: limit.toString(),
+                page: (page + 1).toString(),
+                q: searchQuery,
+                sort: sort,
+                ...(category ? { category } : {}),
+                ...(provider ? { author: provider } : {})
             })
-            .catch((err) => {
-                console.error('Failed to load marketplace data:', err)
-                setLoading(false)
-            })
-    }, [])
+            const res = await fetch(`${API_URL}/api/search?${params.toString()}`)
+            return res.json()
+        },
+        placeholderData: (previousData) => previousData
+    })
+
+    // Transform data
+    const skills: Skill[] = (searchData?.skills || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        category: s.category,
+        tags: typeof s.tags === 'string' ? JSON.parse(s.tags || '[]') : (s.tags || []),
+        source: s.github_url,
+        author: { name: s.author, github: s.github_owner },
+        version: s.version,
+        downloads: s.install_count,
+        verified: s.is_verified === 1,
+        created_at: s.created_at,
+    }))
+
+    // We can fetch categories/providers once to populate filters globally if needed,
+    // but for now passing the current page's derived data to maintain existing structure
+    // or ideally fetching distinct lists. 
+    // Given the previous pattern, let's just construct the MarketplaceData object.
+    const marketplaceData: MarketplaceData = {
+        skills: skills,
+        categories: [], // explicit categories can be fetched separately if needed for full list
+    }
+
+    const handleSearchChange = (q: string) => {
+        setSearchQuery(q)
+        setPage(0) // Reset to first page on new search
+    }
+
+    const handleCategoryChange = (c: string | null) => {
+        setCategory(c)
+        setPage(0)
+    }
+
+    const handleProviderChange = (p: string | null) => {
+        setProvider(p)
+        setPage(0)
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50">
@@ -37,17 +86,22 @@ function SkillsPage() {
                     </p>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    </div>
-                ) : data ? (
-                    <SkillsList data={data} />
-                ) : (
-                    <div className="text-center py-12 text-gray-500">
-                        Failed to load skills directory.
-                    </div>
-                )}
+                <SkillsList
+                    data={marketplaceData}
+                    isLoading={isLoading}
+                    totalCount={searchData?.pagination?.total || 0}
+                    currentPage={page}
+                    limit={limit}
+                    onPageChange={setPage}
+                    searchQuery={searchQuery}
+                    onSearchChange={handleSearchChange}
+                    category={category}
+                    onCategoryChange={handleCategoryChange}
+                    provider={provider}
+                    onProviderChange={handleProviderChange}
+                    sort={sort}
+                    onSortChange={(s) => setSort(s as any)}
+                />
             </div>
         </div>
     )

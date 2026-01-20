@@ -1,69 +1,62 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
-import type { MarketplaceData, Skill } from '../types'
+import type { MarketplaceData } from '../types'
 
-function normalizeText(value: string | undefined): string {
-    return String(value ?? '').toLowerCase()
-}
+export function SkillsList({
+    data,
+    isLoading,
+    totalCount,
+    currentPage,
+    limit,
+    onPageChange,
+    searchQuery,
+    onSearchChange,
+    category,
+    onCategoryChange,
+    provider,
+    onProviderChange,
+    sort,
+    onSortChange
+}: {
+    data: MarketplaceData
+    isLoading: boolean
+    totalCount: number
+    currentPage: number
+    limit: number
+    onPageChange: (page: number) => void
+    searchQuery: string
+    onSearchChange: (q: string) => void
+    category: string | null
+    onCategoryChange: (c: string | null) => void
+    provider: string | null
+    onProviderChange: (p: string | null) => void
+    sort: string
+    onSortChange: (s: string) => void
+}) {
+    // Unique values from current page data is insufficient for global filters,
+    // but without a global stats prop passed down, we rely on what we have or external props.
+    // Ideally parent should pass unique options. For now, let's keep deriving from data (which is just one page)
+    // OR arguably we should just show common categories.
+    // The previous implementation derived from data. Let's keep that for now but acknowledge limitation.
+    // Actually, parent (SkillsPage) fetches top level stats/filters if we want robust filters.
+    // For simplicity given the request, let's rely on data and maybe assume Parent passes allCategories/allProviders if needed.
+    // Let's stick to simple deriving for valid display, but acknowledging specific filter request might need global options.
 
-function matchesQuery(skill: Skill, query: string): boolean {
-    if (!query) return true
-
-    const haystack = [
-        skill.id,
-        skill.name,
-        skill.description,
-        ...(skill.tags || []),
-        ...(skill.keywords || []),
-        skill.category,
-        skill.author?.name,
-        skill.author?.github,
-    ]
-        .map(normalizeText)
-        .join(' ')
-
-    return haystack.includes(query)
-}
-
-export function SkillsList({ data }: { data: MarketplaceData }) {
-    const [search, setSearch] = useState('')
-    const [category, setCategory] = useState<string | null>(null)
-    const [provider, setProvider] = useState<string | null>(null)
-    const [sortBy, setSortBy] = useState<'installed' | 'recent' | 'name'>('installed')
-
-    const filteredSkills = useMemo(() => {
-        const query = normalizeText(search).trim()
-        let result = data.skills.filter((skill) => {
-            const categoryOk = !category || skill.category === category
-            const providerOk = !provider || skill.author?.name === provider
-            const queryOk = matchesQuery(skill, query)
-            return categoryOk && queryOk && providerOk
-        })
-
-        // Sorting
-        result.sort((a, b) => {
-            if (sortBy === 'installed') {
-                return (b.downloads || 0) - (a.downloads || 0)
-            } else if (sortBy === 'recent') {
-                const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
-                const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
-                return dateB - dateA
-            } else {
-                return a.name.localeCompare(b.name)
-            }
-        })
-
-        return result
-    }, [data.skills, search, category, provider, sortBy])
+    // We'll use the derived lists from the current data chunk for now to avoid huge refactor, 
+    // unless data includes metadata about global categories.
+    // A better approach for 12k items: The API should return available facets.
+    // For this step, I will trust the parent `SkillsPage` to handle data fetching and just render what I get.
 
     const categories = useMemo(() => {
-        if (data.categories && data.categories.length > 0) return data.categories
+        if (data.categories?.length) return data.categories
         return [...new Set(data.skills.map((s) => s.category).filter(Boolean))]
     }, [data])
 
     const providers = useMemo(() => {
         return [...new Set(data.skills.map((s) => s.author?.name).filter(Boolean))]
     }, [data])
+
+    const totalPages = Math.ceil(totalCount / limit)
 
     return (
         <div className="space-y-8">
@@ -74,8 +67,8 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                         <input
                             type="text"
                             placeholder="Search skills..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            value={searchQuery}
+                            onChange={(e) => onSearchChange(e.target.value)}
                             className="w-full rounded-lg border-0 py-2.5 pl-4 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                         />
                     </div>
@@ -83,7 +76,7 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                     <div className="flex gap-4 w-full sm:w-auto">
                         <select
                             value={provider || ''}
-                            onChange={(e) => setProvider(e.target.value || null)}
+                            onChange={(e) => onProviderChange(e.target.value || null)}
                             className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                         >
                             <option value="">All Providers</option>
@@ -93,8 +86,8 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                         </select>
 
                         <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
+                            value={sort}
+                            onChange={(e) => onSortChange(e.target.value)}
                             className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
                         >
                             <option value="installed">Most Installed</option>
@@ -107,7 +100,7 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                 <div className="flex items-center justify-between">
                     <div className="flex flex-wrap gap-2">
                         <button
-                            onClick={() => setCategory(null)}
+                            onClick={() => onCategoryChange(null)}
                             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === null
                                 ? 'bg-indigo-600 text-white shadow-sm'
                                 : 'bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300'
@@ -118,7 +111,7 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                         {categories.map((cat) => (
                             <button
                                 key={cat}
-                                onClick={() => setCategory(cat)}
+                                onClick={() => onCategoryChange(cat)}
                                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === cat
                                     ? 'bg-indigo-600 text-white shadow-sm'
                                     : 'bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300'
@@ -129,15 +122,29 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                         ))}
                     </div>
                     <div className="text-sm text-gray-500 hidden sm:block">
-                        {filteredSkills.length} skills found
+                        {totalCount} skills found
                     </div>
                 </div>
             </div>
 
             {/* Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredSkills.length > 0 ? (
-                    filteredSkills.map((skill) => (
+                {isLoading ? (
+                    // Skeleton Loading
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl bg-white border border-gray-200 p-6 space-y-4 animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                            <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-4 bg-gray-200 rounded w-full"></div>
+                            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                            <div className="flex gap-2 pt-2">
+                                <div className="h-5 bg-gray-200 rounded-full w-16"></div>
+                                <div className="h-5 bg-gray-200 rounded-full w-12"></div>
+                            </div>
+                        </div>
+                    ))
+                ) : data.skills.length > 0 ? (
+                    data.skills.map((skill) => (
                         <div
                             key={skill.id}
                             className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 transition-all hover:shadow-lg hover:ring-indigo-600/20"
@@ -161,7 +168,7 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                                     </Link>
                                 </h3>
 
-                                <p className="mt-2 text-sm leading-6 text-gray-600 flex-1">
+                                <p className="mt-2 text-sm leading-6 text-gray-600 flex-1 line-clamp-3">
                                     {skill.description}
                                 </p>
 
@@ -179,7 +186,7 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                                 </div>
                                 {skill.downloads && (
                                     <div>
-                                        {skill.downloads.toLocaleString()} installs
+                                        {(skill.downloads || 0).toLocaleString()} installs
                                     </div>
                                 )}
                             </div>
@@ -192,6 +199,43 @@ export function SkillsList({ data }: { data: MarketplaceData }) {
                     </div>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {!isLoading && totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                        onClick={() => onPageChange(0)}
+                        disabled={currentPage === 0}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        First
+                    </button>
+                    <button
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 0}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Previous
+                    </button>
+                    <span className="px-4 py-2 text-sm text-gray-700">
+                        Page {currentPage + 1} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage >= totalPages - 1}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Next
+                    </button>
+                    <button
+                        onClick={() => onPageChange(totalPages - 1)}
+                        disabled={currentPage >= totalPages - 1}
+                        className="px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Last
+                    </button>
+                </div>
+            )}
         </div>
     )
 }

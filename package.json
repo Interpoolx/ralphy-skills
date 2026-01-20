@@ -1,6 +1,6 @@
 {
     "name": "ralphy-skills",
-    "version": "2.2.1",
+    "version": "2.3.0",
     "description": "Universal Skills Marketplace for AI Coding Agents. Browse, install, and manage AI agent skills with CLI and web interface.",
     "keywords": [
         "skills",
@@ -56,7 +56,9 @@
         "start": "node dist/index.js",
         "prepublishOnly": "npm run build",
         "test": "echo \"Tests will be added soon\" && exit 0",
-        "serve": "npm run build && node dist/index.js serve"
+        "serve": "npm run build && node dist/index.js serve",
+        "db:push": "node scripts/native_sync.js push",
+        "db:pull": "node scripts/native_sync.js pull"
     },
     "dependencies": {
         "@clack/prompts": "^0.11.0",

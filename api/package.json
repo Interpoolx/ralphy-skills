@@ -1,0 +1,23 @@
+{
+    "name": "ralphy-skills-api",
+    "version": "1.0.0",
+    "description": "Ralphy Skills Registry API - Cloudflare Worker with Hono and D1",
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "db:migrate": "wrangler d1 execute ralphy-skills-db --file=./schema.sql",
+        "db:migrate:local": "wrangler d1 execute ralphy-skills-db --local --file=./schema.sql"
+    },
+    "dependencies": {
+        "hono": "^4.4.0",
+        "drizzle-orm": "^0.31.0",
+        "gray-matter": "^4.0.3"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20240529.0",
+        "drizzle-kit": "^0.22.0",
+        "wrangler": "^3.60.0",
+        "typescript": "^5.5.0"
+    }
+}

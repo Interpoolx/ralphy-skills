@@ -1,167 +1,234 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { DocsLayout, CodeBlock, InfoBox } from '../components/DocsLayout'
 
 export const Route = createFileRoute('/docs/what-are-skills')({
   component: WhatAreSkills,
 })
 
+const toc = [
+  { id: 'introduction', title: 'Introduction', level: 2 },
+  { id: 'the-problem', title: 'The problem', level: 2 },
+  { id: 'how-skills-work', title: 'How skills work', level: 2 },
+  { id: 'skill-structure', title: 'Skill structure', level: 3 },
+  { id: 'example-skill', title: 'Example skill', level: 3 },
+  { id: 'benefits', title: 'Benefits', level: 2 },
+  { id: 'supported-clients', title: 'Supported clients', level: 2 },
+  { id: 'getting-started', title: 'Getting started', level: 2 },
+]
+
 function WhatAreSkills() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <div className="bg-slate-50 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <nav className="flex items-center gap-2 text-sm">
-            <Link to="/docs" className="text-gray-500 hover:text-blue-600">Docs</Link>
-            <span className="text-gray-400">/</span>
-            <span className="text-gray-900 font-medium">What are Skills?</span>
-          </nav>
-        </div>
-      </div>
+    <DocsLayout
+      title="What are Skills?"
+      description="Skills are reusable instructions that teach AI coding assistants how to perform specific tasks."
+      toc={toc}
+    >
+      <h2 id="introduction">Introduction</h2>
+      <p>
+        Skills are <strong>portable instruction files</strong> that enhance AI coding assistants with
+        specialized knowledge. They're like plugins for your AI—teaching it your team's conventions,
+        best practices, and domain expertise.
+      </p>
 
-      {/* Content */}
-      <article className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-6">What are Skills?</h1>
+      <InfoBox type="tip" title="Think of skills as...">
+        A senior developer's knowledge, packaged into a file that any AI assistant can read and follow.
+      </InfoBox>
 
-        <div className="prose prose-lg max-w-none">
-          <p className="text-xl text-gray-600 mb-8">
-            Skills are structured, reusable capabilities that enhance AI coding assistants with specialized knowledge and behaviors.
-          </p>
+      <h2 id="the-problem">The problem</h2>
+      <p>
+        AI coding assistants are incredibly capable, but they lack context about:
+      </p>
+      <ul>
+        <li>Your team's coding standards and conventions</li>
+        <li>Project-specific architectural decisions</li>
+        <li>Domain knowledge unique to your industry</li>
+        <li>Preferred libraries and patterns</li>
+        <li>Common pitfalls and how to avoid them</li>
+      </ul>
 
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg mb-8">
-            <p className="text-blue-800 font-medium">
-              Think of skills as "plugins" for your AI coding assistant – they give the AI specialized knowledge about specific frameworks, best practices, or workflows.
-            </p>
-          </div>
+      <p>
+        Without this context, AI assistants give generic advice that may not fit your project.
+        You end up repeatedly correcting the same mistakes or explaining the same patterns.
+      </p>
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-4">The Problem</h2>
-          <p className="text-gray-600 mb-4">
-            AI coding assistants are powerful, but they have limitations:
-          </p>
-          <ul className="list-disc pl-6 text-gray-600 space-y-2 mb-8">
-            <li>They may not know your team's specific coding standards</li>
-            <li>They might use outdated patterns for new frameworks</li>
-            <li>They can't learn your project-specific conventions</li>
-            <li>Different AI tools require different configuration formats</li>
-          </ul>
+      <h2 id="how-skills-work">How skills work</h2>
+      <p>
+        Skills solve this by providing structured instructions that AI assistants can read and follow.
+        When you install a skill, the AI gains access to that knowledge automatically.
+      </p>
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-4">The Solution: Skills</h2>
-          <p className="text-gray-600 mb-4">
-            Skills solve these problems by providing:
-          </p>
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">📚 Specialized Knowledge</h3>
-              <p className="text-sm text-gray-600">Best practices, patterns, and guidelines for specific technologies.</p>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">🎯 Consistent Output</h3>
-              <p className="text-sm text-gray-600">Ensure AI follows your team's coding standards every time.</p>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">🔄 Shareable</h3>
-              <p className="text-sm text-gray-600">Share skills across your team or the community.</p>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">🌐 Universal</h3>
-              <p className="text-sm text-gray-600">One skill format works with 15+ AI coding tools.</p>
-            </div>
-          </div>
+      <h3 id="skill-structure">Skill structure</h3>
+      <p>
+        Each skill is a directory containing a <code>SKILL.md</code> file:
+      </p>
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-4">How Skills Work</h2>
-          <p className="text-gray-600 mb-4">
-            A skill is simply a directory containing a <code className="bg-gray-100 px-2 py-1 rounded text-sm">SKILL.md</code> file. This file contains:
-          </p>
-          <div className="bg-gray-900 text-gray-100 p-6 rounded-lg font-mono text-sm mb-8 overflow-x-auto">
-            <pre>{`---
-name: React Best Practices
-description: Modern React patterns and conventions
-category: frontend
-tags:
-  - react
-  - typescript
-  - hooks
+      <CodeBlock language="text">{`my-skill/
+└── SKILL.md        # Required file with instructions
+
+# Optional additions:
+├── scripts/        # Executable scripts
+├── references/     # Reference documentation
+└── assets/         # Images, templates, data`}</CodeBlock>
+
+      <p>
+        The <code>SKILL.md</code> file contains YAML frontmatter (metadata) followed by
+        Markdown content (instructions):
+      </p>
+
+      <CodeBlock language="yaml" filename="SKILL.md">{`---
+name: react-components
+description: Best practices for building React components
 ---
 
-# React Best Practices
+# React Component Guidelines
+
+When building React components, follow these patterns...`}</CodeBlock>
+
+      <h3 id="example-skill">Example skill</h3>
+      <p>
+        Here's a complete example of a skill that teaches an AI how to write React components:
+      </p>
+
+      <CodeBlock language="markdown" filename="react-components/SKILL.md">{`---
+name: react-components
+description: Modern React component patterns and best practices. 
+  Use when creating new components or refactoring existing ones.
+---
+
+# React Component Guidelines
 
 ## Component Structure
-- Use functional components with hooks
-- Keep components small and focused
-- Extract custom hooks for reusable logic
 
-## State Management
-- Use useState for local state
-- Use useReducer for complex state
-- Consider Zustand or Jotai for global state
+Always structure components this way:
 
-... more guidelines ...`}</pre>
-          </div>
+1. **Imports** - External first, then internal
+2. **Types** - Props interface and internal types
+3. **Component** - The main function
+4. **Helpers** - Local utility functions
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-4">Real-World Examples</h2>
-          <div className="space-y-4 mb-8">
-            <ExampleCard
-              title="Frontend Design Skill"
-              description="Teaches AI to create production-grade React interfaces with modern patterns, accessibility, and responsive design."
-              use="Building UI components and pages"
-            />
-            <ExampleCard
-              title="Testing Skill"
-              description="Provides guidance on writing comprehensive tests using Jest, Vitest, and Testing Library."
-              use="Writing unit and integration tests"
-            />
-            <ExampleCard
-              title="Code Review Skill"
-              description="Helps AI provide thorough, constructive code reviews following industry best practices."
-              use="Reviewing pull requests"
-            />
-          </div>
+## Patterns to Follow
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-4">Getting Started</h2>
-          <p className="text-gray-600 mb-4">
-            Ready to use skills? Here's how to get started:
-          </p>
-          <div className="bg-gray-900 text-gray-100 p-6 rounded-lg font-mono text-sm mb-8">
-            <pre>{`# Search for skills
-npx ralphy-skills search
+### Use Functional Components
+\`\`\`tsx
+// ✅ Good
+function UserCard({ user }: UserCardProps) {
+  return <div>{user.name}</div>
+}
 
-# Install a skill
+// ❌ Avoid
+class UserCard extends Component { ... }
+\`\`\`
+
+### Extract Custom Hooks
+When logic is used in 2+ components, extract it:
+
+\`\`\`tsx
+// ✅ Reusable hook
+function useUser(id: string) {
+  const [user, setUser] = useState(null)
+  // ... fetch logic
+  return { user, loading }
+}
+\`\`\`
+
+## Naming Conventions
+
+- Components: PascalCase (UserProfile.tsx)
+- Hooks: camelCase with "use" prefix (useAuth.ts)
+- Utils: camelCase (formatDate.ts)`}</CodeBlock>
+
+      <h2 id="benefits">Benefits</h2>
+
+      <div className="grid md:grid-cols-2 gap-6 my-6">
+        <BenefitCard
+          icon="📚"
+          title="Consistent Output"
+          description="AI follows your team's conventions every time, reducing code review friction."
+        />
+        <BenefitCard
+          icon="🔄"
+          title="Portable Knowledge"
+          description="Skills work across different AI tools—Cursor, Claude Code, Copilot, and more."
+        />
+        <BenefitCard
+          icon="👥"
+          title="Team Onboarding"
+          description="New team members get AI assistance that already knows your patterns."
+        />
+        <BenefitCard
+          icon="🚀"
+          title="Instant Expertise"
+          description="Install community skills to gain specialized knowledge immediately."
+        />
+      </div>
+
+      <h2 id="supported-clients">Supported clients</h2>
+      <p>
+        Skills work with 15+ AI coding assistants:
+      </p>
+
+      <div className="flex flex-wrap gap-2 my-4">
+        {clients.map((client) => (
+          <span key={client} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+            {client}
+          </span>
+        ))}
+      </div>
+
+      <InfoBox type="note" title="Universal Format">
+        Skills use a standardized format that any AI tool can read. Install once, use everywhere.
+      </InfoBox>
+
+      <h2 id="getting-started">Getting started</h2>
+      <p>
+        Ready to try skills? Here's how to get started:
+      </p>
+
+      <CodeBlock language="bash">{`# Install a skill
 npx ralphy-skills install frontend-design
 
-# See what's installed
-npx ralphy-skills list
+# Search for skills
+npx ralphy-skills search react
 
-# Sync to AGENTS.md (for AI to read)
-npx ralphy-skills sync`}</pre>
-          </div>
+# List installed skills
+npx ralphy-skills list`}</CodeBlock>
 
-          <div className="flex gap-4 mt-12">
-            <Link
-              to="/docs/specification"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Read the Specification →
-            </Link>
-            <Link
-              to="/skills"
-              className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-            >
-              Browse Skills
-            </Link>
-          </div>
-        </div>
-      </article>
-    </div>
-  )
-}
-
-function ExampleCard({ title, description, use }: { title: string; description: string; use: string }) {
-  return (
-    <div className="border border-gray-200 rounded-lg p-4">
-      <h4 className="font-semibold text-gray-900">{title}</h4>
-      <p className="text-sm text-gray-600 mt-1">{description}</p>
-      <p className="text-xs text-gray-500 mt-2">
-        <span className="font-medium">Best for:</span> {use}
+      <p>
+        Or create your own skill:
       </p>
+
+      <CodeBlock language="bash">{`npx ralphy-skills create`}</CodeBlock>
+
+      <div className="flex gap-4 mt-8">
+        <a
+          href="/docs/specification"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+        >
+          View Specification →
+        </a>
+        <a
+          href="/skills"
+          className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+        >
+          Browse Skills
+        </a>
+      </div>
+    </DocsLayout>
+  )
+}
+
+function BenefitCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="bg-slate-50 p-5 rounded-lg">
+      <span className="text-2xl mb-2 block">{icon}</span>
+      <h4 className="font-semibold text-gray-900 mb-1">{title}</h4>
+      <p className="text-sm text-gray-600">{description}</p>
     </div>
   )
 }
+
+const clients = [
+  'Claude Code', 'Cursor', 'GitHub Copilot', 'Windsurf', 'Gemini CLI',
+  'Aider', 'OpenCode', 'Codex CLI', 'Amp', 'Goose', 'Letta',
+  'Antigravity', 'Trae', 'Qoder', 'CodeBuddy'
+]

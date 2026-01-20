@@ -1,0 +1,5 @@
+# Proxy /api requests to the Cloudflare Worker
+/api/*  https://ralphy-skills-api.rajeshkumarlawyer007.workers.dev/api/:splat  200
+
+# SPA Routing (default)
+/*  /index.html  200

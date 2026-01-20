@@ -6,8 +6,9 @@ import matter from 'gray-matter';
 import { SkillDefinition, SkillMetadata } from '../types';
 
 // Registry Configuration
-const REGISTRY_FILENAME = 'recommended_skills.json';
-const REGISTRY_URL = 'https://raw.githubusercontent.com/Interpoolx/ralphy-skills/main/recommended_skills.json';
+const REGISTRY_FILENAME = 'marketplace.json';
+const REGISTRY_API_URL = 'https://ralphy-skills.pages.dev/api'; // Cloudflare Pages functions path
+const REGISTRY_FALLBACK_URL = 'https://raw.githubusercontent.com/Interpoolx/ralphy-skills/main/marketplace.json';
 const CACHE_FILE = path.join(os.homedir(), '.ralphy', 'registry_cache.json');
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -106,7 +107,7 @@ function saveToCache(skills: SkillDefinition[]) {
  */
 function fetchRemoteRegistry(): Promise<SkillDefinition[]> {
     return new Promise((resolve, reject) => {
-        https.get(REGISTRY_URL, (res) => {
+        https.get(REGISTRY_FALLBACK_URL, (res) => {
             if (res.statusCode !== 200) {
                 reject(new Error(`Failed to fetch registry: ${res.statusCode}`));
                 return;
@@ -116,8 +117,10 @@ function fetchRemoteRegistry(): Promise<SkillDefinition[]> {
             res.on('data', (chunk) => data += chunk);
             res.on('end', () => {
                 try {
-                    const skills = JSON.parse(data) as SkillDefinition[];
-                    resolve(skills);
+                    const parsed = JSON.parse(data);
+                    // Handle both array and { skills: [...] } formats
+                    const skills = Array.isArray(parsed) ? parsed : (parsed.skills || []);
+                    resolve(skills as SkillDefinition[]);
                 } catch (e) {
                     reject(e);
                 }

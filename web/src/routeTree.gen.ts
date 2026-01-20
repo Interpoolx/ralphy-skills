@@ -11,9 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as HpanelRouteImport } from './routes/hpanel'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HpanelIndexRouteImport } from './routes/hpanel.index'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as SkillSkillIdRouteImport } from './routes/skill.$skillId'
+import { Route as HpanelSkillsRouteImport } from './routes/hpanel.skills'
+import { Route as HpanelSettingsRouteImport } from './routes/hpanel.settings'
+import { Route as HpanelImportRouteImport } from './routes/hpanel.import'
+import { Route as HpanelDocsRouteImport } from './routes/hpanel.docs'
+import { Route as HpanelCategoriesRouteImport } from './routes/hpanel.categories'
+import { Route as HpanelAddRouteImport } from './routes/hpanel.add'
 import { Route as DocsWhatAreSkillsRouteImport } from './routes/docs.what-are-skills'
 import { Route as DocsSpecificationRouteImport } from './routes/docs.specification'
 import { Route as DocsIntegrateRouteImport } from './routes/docs.integrate'
@@ -29,10 +37,20 @@ const SkillsRoute = SkillsRouteImport.update({
   path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HpanelRoute = HpanelRouteImport.update({
+  id: '/hpanel',
+  path: '/hpanel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HpanelIndexRoute = HpanelIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HpanelRoute,
 } as any)
 const DocsIndexRoute = DocsIndexRouteImport.update({
   id: '/docs/',
@@ -43,6 +61,36 @@ const SkillSkillIdRoute = SkillSkillIdRouteImport.update({
   id: '/skill/$skillId',
   path: '/skill/$skillId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HpanelSkillsRoute = HpanelSkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelSettingsRoute = HpanelSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelImportRoute = HpanelImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelDocsRoute = HpanelDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelCategoriesRoute = HpanelCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => HpanelRoute,
+} as any)
+const HpanelAddRoute = HpanelAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => HpanelRoute,
 } as any)
 const DocsWhatAreSkillsRoute = DocsWhatAreSkillsRouteImport.update({
   id: '/docs/what-are-skills',
@@ -67,14 +115,22 @@ const DocsCreateRoute = DocsCreateRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/hpanel': typeof HpanelRouteWithChildren
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
   '/docs/create': typeof DocsCreateRoute
   '/docs/integrate': typeof DocsIntegrateRoute
   '/docs/specification': typeof DocsSpecificationRoute
   '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
+  '/hpanel/add': typeof HpanelAddRoute
+  '/hpanel/categories': typeof HpanelCategoriesRoute
+  '/hpanel/docs': typeof HpanelDocsRoute
+  '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/settings': typeof HpanelSettingsRoute
+  '/hpanel/skills': typeof HpanelSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs/': typeof DocsIndexRoute
+  '/hpanel/': typeof HpanelIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,33 +140,56 @@ export interface FileRoutesByTo {
   '/docs/integrate': typeof DocsIntegrateRoute
   '/docs/specification': typeof DocsSpecificationRoute
   '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
+  '/hpanel/add': typeof HpanelAddRoute
+  '/hpanel/categories': typeof HpanelCategoriesRoute
+  '/hpanel/docs': typeof HpanelDocsRoute
+  '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/settings': typeof HpanelSettingsRoute
+  '/hpanel/skills': typeof HpanelSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs': typeof DocsIndexRoute
+  '/hpanel': typeof HpanelIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/hpanel': typeof HpanelRouteWithChildren
   '/skills': typeof SkillsRoute
   '/submit': typeof SubmitRoute
   '/docs/create': typeof DocsCreateRoute
   '/docs/integrate': typeof DocsIntegrateRoute
   '/docs/specification': typeof DocsSpecificationRoute
   '/docs/what-are-skills': typeof DocsWhatAreSkillsRoute
+  '/hpanel/add': typeof HpanelAddRoute
+  '/hpanel/categories': typeof HpanelCategoriesRoute
+  '/hpanel/docs': typeof HpanelDocsRoute
+  '/hpanel/import': typeof HpanelImportRoute
+  '/hpanel/settings': typeof HpanelSettingsRoute
+  '/hpanel/skills': typeof HpanelSkillsRoute
   '/skill/$skillId': typeof SkillSkillIdRoute
   '/docs/': typeof DocsIndexRoute
+  '/hpanel/': typeof HpanelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/hpanel'
     | '/skills'
     | '/submit'
     | '/docs/create'
     | '/docs/integrate'
     | '/docs/specification'
     | '/docs/what-are-skills'
+    | '/hpanel/add'
+    | '/hpanel/categories'
+    | '/hpanel/docs'
+    | '/hpanel/import'
+    | '/hpanel/settings'
+    | '/hpanel/skills'
     | '/skill/$skillId'
     | '/docs/'
+    | '/hpanel/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,23 +199,39 @@ export interface FileRouteTypes {
     | '/docs/integrate'
     | '/docs/specification'
     | '/docs/what-are-skills'
+    | '/hpanel/add'
+    | '/hpanel/categories'
+    | '/hpanel/docs'
+    | '/hpanel/import'
+    | '/hpanel/settings'
+    | '/hpanel/skills'
     | '/skill/$skillId'
     | '/docs'
+    | '/hpanel'
   id:
     | '__root__'
     | '/'
+    | '/hpanel'
     | '/skills'
     | '/submit'
     | '/docs/create'
     | '/docs/integrate'
     | '/docs/specification'
     | '/docs/what-are-skills'
+    | '/hpanel/add'
+    | '/hpanel/categories'
+    | '/hpanel/docs'
+    | '/hpanel/import'
+    | '/hpanel/settings'
+    | '/hpanel/skills'
     | '/skill/$skillId'
     | '/docs/'
+    | '/hpanel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HpanelRoute: typeof HpanelRouteWithChildren
   SkillsRoute: typeof SkillsRoute
   SubmitRoute: typeof SubmitRoute
   DocsCreateRoute: typeof DocsCreateRoute
@@ -163,12 +258,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkillsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hpanel': {
+      id: '/hpanel'
+      path: '/hpanel'
+      fullPath: '/hpanel'
+      preLoaderRoute: typeof HpanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/hpanel/': {
+      id: '/hpanel/'
+      path: '/'
+      fullPath: '/hpanel/'
+      preLoaderRoute: typeof HpanelIndexRouteImport
+      parentRoute: typeof HpanelRoute
     }
     '/docs/': {
       id: '/docs/'
@@ -183,6 +292,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/skill/$skillId'
       preLoaderRoute: typeof SkillSkillIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/hpanel/skills': {
+      id: '/hpanel/skills'
+      path: '/skills'
+      fullPath: '/hpanel/skills'
+      preLoaderRoute: typeof HpanelSkillsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/settings': {
+      id: '/hpanel/settings'
+      path: '/settings'
+      fullPath: '/hpanel/settings'
+      preLoaderRoute: typeof HpanelSettingsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/import': {
+      id: '/hpanel/import'
+      path: '/import'
+      fullPath: '/hpanel/import'
+      preLoaderRoute: typeof HpanelImportRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/docs': {
+      id: '/hpanel/docs'
+      path: '/docs'
+      fullPath: '/hpanel/docs'
+      preLoaderRoute: typeof HpanelDocsRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/categories': {
+      id: '/hpanel/categories'
+      path: '/categories'
+      fullPath: '/hpanel/categories'
+      preLoaderRoute: typeof HpanelCategoriesRouteImport
+      parentRoute: typeof HpanelRoute
+    }
+    '/hpanel/add': {
+      id: '/hpanel/add'
+      path: '/add'
+      fullPath: '/hpanel/add'
+      preLoaderRoute: typeof HpanelAddRouteImport
+      parentRoute: typeof HpanelRoute
     }
     '/docs/what-are-skills': {
       id: '/docs/what-are-skills'
@@ -215,8 +366,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface HpanelRouteChildren {
+  HpanelAddRoute: typeof HpanelAddRoute
+  HpanelCategoriesRoute: typeof HpanelCategoriesRoute
+  HpanelDocsRoute: typeof HpanelDocsRoute
+  HpanelImportRoute: typeof HpanelImportRoute
+  HpanelSettingsRoute: typeof HpanelSettingsRoute
+  HpanelSkillsRoute: typeof HpanelSkillsRoute
+  HpanelIndexRoute: typeof HpanelIndexRoute
+}
+
+const HpanelRouteChildren: HpanelRouteChildren = {
+  HpanelAddRoute: HpanelAddRoute,
+  HpanelCategoriesRoute: HpanelCategoriesRoute,
+  HpanelDocsRoute: HpanelDocsRoute,
+  HpanelImportRoute: HpanelImportRoute,
+  HpanelSettingsRoute: HpanelSettingsRoute,
+  HpanelSkillsRoute: HpanelSkillsRoute,
+  HpanelIndexRoute: HpanelIndexRoute,
+}
+
+const HpanelRouteWithChildren =
+  HpanelRoute._addFileChildren(HpanelRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HpanelRoute: HpanelRouteWithChildren,
   SkillsRoute: SkillsRoute,
   SubmitRoute: SubmitRoute,
   DocsCreateRoute: DocsCreateRoute,

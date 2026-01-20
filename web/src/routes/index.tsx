@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { SkillsList } from '../components/SkillsList'
 import type { MarketplaceData } from '../types'
-import { MARKETPLACE_URL } from '../constants'
+import { API_URL } from '../constants'
 
 export const Route = createFileRoute('/')({
     component: Index,
@@ -12,10 +12,31 @@ function Index() {
     const [data, setData] = useState<MarketplaceData | null>(null)
 
     useEffect(() => {
-        fetch(MARKETPLACE_URL)
+        // Fetch from D1 API - Top 25 most installed
+        fetch(`${API_URL}/api/search?limit=25&sort=installs`)
             .then((res) => res.json())
-            .then((data) => setData(data))
-            .catch((err) => console.error('Failed to load marketplace data:', err))
+            .then((apiData) => {
+                // Transform API response to MarketplaceData format
+                const skills = (apiData.skills || []).map((s: any) => ({
+                    id: s.id,
+                    name: s.name,
+                    description: s.description,
+                    category: s.category,
+                    tags: typeof s.tags === 'string' ? JSON.parse(s.tags || '[]') : (s.tags || []),
+                    source: s.github_url,
+                    author: { name: s.author, github: s.github_owner },
+                    version: s.version,
+                    downloads: s.install_count,
+                    verified: s.is_verified === 1,
+                    created_at: s.created_at,
+                }))
+
+                // Get unique categories
+                const categories = [...new Set(skills.map((s: any) => s.category).filter(Boolean))]
+
+                setData({ skills, categories } as MarketplaceData)
+            })
+            .catch((err) => console.error('Failed to load skills from API:', err))
     }, [])
 
     return (

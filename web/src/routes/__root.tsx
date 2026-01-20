@@ -1,4 +1,4 @@
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Footer } from '../components/Footer'
 import { useState } from 'react'
@@ -9,6 +9,12 @@ export const Route = createRootRoute({
 
 function RootComponent() {
     const [docsOpen, setDocsOpen] = useState(false)
+    const location = useLocation()
+
+    // Skip header/footer for admin panel
+    if (location.pathname.startsWith('/hpanel')) {
+        return <Outlet />
+    }
 
     return (
         <div className="min-h-screen bg-white">
@@ -97,12 +103,12 @@ function RootComponent() {
                                 NPM ↗
                             </a>
                             <a
-                                href="https://github.com/Interpoolx/ralphy-skills"
+                                href="https://open-vsx.org/extension/Ralphysh/ralphy-sh"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                             >
-                                GitHub
+                                Antigravity Kit
                             </a>
                         </div>
                     </div>
@@ -112,7 +118,7 @@ function RootComponent() {
                 <Outlet />
             </main>
             <Footer />
-            <TanStackRouterDevtools />
+            {import.meta.env.DEV && <TanStackRouterDevtools />}
         </div>
     )
 }

@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import type { MarketplaceData, Skill } from '../types'
-import { MARKETPLACE_URL } from '../constants'
+import type { Skill } from '../types'
 import confetti from 'canvas-confetti'
 import clsx from 'clsx'
 import { ShareModal } from '../components/ShareModal'
@@ -23,11 +22,17 @@ function SkillPage() {
 
   useEffect(() => {
     // Load Skill Data
-    fetch(MARKETPLACE_URL)
-      .then((res) => res.json())
-      .then((data: MarketplaceData) => {
-        const found = data.skills.find((s) => s.id === skillId)
-        setSkill(found || null)
+    // Load Skill Data
+    fetch(`/api/skills/${skillId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 404) return null
+          throw new Error('Failed to fetch skill')
+        }
+        return res.json()
+      })
+      .then((data: Skill | null) => {
+        setSkill(data)
         setLoading(false)
       })
       .catch((err) => {
@@ -184,15 +189,20 @@ function SkillPage() {
 
               <div className="mt-8 pt-8 border-t border-gray-100 grid grid-cols-2 gap-4">
                 {skill.author && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500">Author</h3>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
-                        {skill.author.name.substring(0, 2)}
+                  (() => {
+                    const authorName = typeof skill.author === 'string' ? skill.author : skill.author?.name || 'Unknown'
+                    return (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">Author</h3>
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
+                            {authorName.substring(0, 2)}
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900">{authorName}</span>
+                        </div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900">{skill.author.name}</span>
-                    </div>
-                  </div>
+                    )
+                  })()
                 )}
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Category</h3>
@@ -341,18 +351,23 @@ function SkillPage() {
             </div>
 
             {/* Tags Card */}
-            {skill.tags && (
-              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skill.tags.map((tag) => (
-                    <span key={tag} className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                      {tag}
-                    </span>
-                  ))}
+            {(() => {
+              const tags = (typeof skill.tags === 'string' ? JSON.parse(skill.tags) : skill.tags) || []
+              if (tags.length === 0) return null
+
+              return (
+                <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag: string) => (
+                      <span key={tag} className="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       </div>
