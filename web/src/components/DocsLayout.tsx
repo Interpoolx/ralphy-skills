@@ -128,7 +128,7 @@ export function DocsLayout({ children, title, description, toc }: DocsLayoutProp
 
 export function CodeBlock({ children, language = 'bash', filename }: { children: string; language?: string; filename?: string }) {
     return (
-        <div className="relative group">
+        <div className="relative group not-prose">
             {filename && (
                 <div className="bg-gray-800 text-gray-400 text-xs px-4 py-2 rounded-t-lg border-b border-gray-700">
                     {filename}
