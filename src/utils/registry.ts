@@ -18,9 +18,9 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
  * Single source of truth: root recommended_skills.json
  */
 function getBundledRegistryPath(): string {
+    // Only check relative to the script (dist or src)
     const repoPath = path.join(__dirname, '..', '..', REGISTRY_FILENAME);
     if (fs.existsSync(repoPath)) return repoPath;
-
     return '';
 }
 
@@ -39,8 +39,9 @@ async function _getRegistry(): Promise<SkillDefinition[]> {
             saveToCache(remoteSkills);
             return remoteSkills;
         }
-    } catch (error) {
+    } catch (error: any) {
         // Silently fail remote fetch and fall back to cache/bundled
+        if (process.env.DEBUG) console.error('API Fetch Failed:', error.message);
     }
 
     // 2. Try to load from cache

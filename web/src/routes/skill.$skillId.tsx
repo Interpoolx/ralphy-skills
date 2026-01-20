@@ -5,6 +5,8 @@ import confetti from 'canvas-confetti'
 import clsx from 'clsx'
 import { ShareModal } from '../components/ShareModal'
 
+import { API_URL } from '../constants'
+
 export const Route = createFileRoute('/skill/$skillId')({
   component: SkillPage,
 })
@@ -23,7 +25,7 @@ function SkillPage() {
   useEffect(() => {
     // Load Skill Data
     // Load Skill Data
-    fetch(`/api/skills/${skillId}`)
+    fetch(`${API_URL}/api/skills/${skillId}`)
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 404) return null
