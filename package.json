@@ -1,7 +1,7 @@
 {
     "name": "ralphy-skills",
-    "version": "2.3.0",
-    "description": "Universal Skills Marketplace for AI Coding Agents. Browse, install, and manage AI agent skills with CLI and web interface.",
+    "version": "2.4.1",
+    "description": "Universal Skills loader for AI Coding Agents - The #1 CLI for AI Agent Skills",
     "keywords": [
         "skills",
         "agent",
@@ -64,6 +64,7 @@
         "@clack/prompts": "^0.11.0",
         "chalk": "^4.1.2",
         "commander": "^11.1.0",
+        "cross-fetch": "^4.1.0",
         "gray-matter": "^4.0.3",
         "inquirer": "^9.3.8",
         "picocolors": "^1.1.1"

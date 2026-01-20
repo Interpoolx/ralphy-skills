@@ -1,6 +1,6 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
-import { getRegistry } from '../utils/registry';
+import { searchRegistry } from '../utils/registry';
 import { SkillDefinition } from '../types';
 
 interface SearchOptions {
@@ -45,16 +45,7 @@ export async function interactiveSearch(initialQuery?: string, options: SearchOp
     let results: SkillDefinition[] = [];
 
     try {
-        const registry = await getRegistry();
-        const searchLower = query.toLowerCase();
-
-        results = registry.filter(s =>
-            s.name.toLowerCase().includes(searchLower) ||
-            s.id.toLowerCase().includes(searchLower) ||
-            s.description?.toLowerCase().includes(searchLower) ||
-            s.category?.toLowerCase().includes(searchLower) ||
-            s.tags?.some(t => t.toLowerCase().includes(searchLower))
-        );
+        results = await searchRegistry(query);
 
         // Sort results
         if (options.sort === 'name') {
@@ -216,16 +207,7 @@ export async function searchSkillsSimple(query: string, options: SearchOptions =
     console.log(pc.cyan(`\n🔍 Searching for "${query}"...\n`));
 
     try {
-        const registry = await getRegistry();
-        const searchLower = query.toLowerCase();
-
-        let results = registry.filter(s =>
-            s.name.toLowerCase().includes(searchLower) ||
-            s.id.toLowerCase().includes(searchLower) ||
-            s.description?.toLowerCase().includes(searchLower) ||
-            s.category?.toLowerCase().includes(searchLower) ||
-            s.tags?.some(t => t.toLowerCase().includes(searchLower))
-        );
+        let results: SkillDefinition[] = await searchRegistry(query);
 
         if (options.limit) {
             results = results.slice(0, options.limit);

@@ -2,12 +2,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as https from 'https';
+import fetch from 'cross-fetch';
 import matter from 'gray-matter';
 import { SkillDefinition, SkillMetadata } from '../types';
 
 // Registry Configuration
 const REGISTRY_FILENAME = 'marketplace.json';
-const REGISTRY_API_URL = 'https://ralphy-skills.pages.dev/api'; // Cloudflare Pages functions path
+const REGISTRY_API_URL = 'https://ralphy-skills-api.rajeshkumarlawyer007.workers.dev/api'; // Production Worker URL
 const REGISTRY_FALLBACK_URL = 'https://raw.githubusercontent.com/Interpoolx/ralphy-skills/main/marketplace.json';
 const CACHE_FILE = path.join(os.homedir(), '.ralphy', 'registry_cache.json');
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -26,7 +27,11 @@ function getBundledRegistryPath(): string {
 /**
  * Fetch the registry (Remote -> Cache -> Bundled).
  */
-export async function getRegistry(): Promise<SkillDefinition[]> {
+/**
+ * Fetch the registry (Remote -> Cache -> Bundled).
+ * Internal helper to avoid circular export reference issues.
+ */
+async function _getRegistry(): Promise<SkillDefinition[]> {
     // 1. Try to fetch from remote if cache is old or missing
     try {
         if (shouldRefreshCache()) {
@@ -50,6 +55,13 @@ export async function getRegistry(): Promise<SkillDefinition[]> {
 
     // 3. Fallback to bundled
     return loadBundledRegistry();
+}
+
+/**
+ * Public accessor for the registry.
+ */
+export async function getRegistry(): Promise<SkillDefinition[]> {
+    return _getRegistry();
 }
 
 /**
@@ -132,10 +144,27 @@ function fetchRemoteRegistry(): Promise<SkillDefinition[]> {
 /**
  * Find a skill by ID or name (case-insensitive).
  */
+/**
+ * Find a skill by ID or name (case-insensitive).
+ * 1. Try Remote API
+ * 2. Fallback to full registry (Cache/Bundled)
+ */
 export async function findSkill(query: string): Promise<SkillDefinition | undefined> {
-    const registry = await getRegistry();
     const lowerQuery = query.toLowerCase();
 
+    // 1. Try API specific lookup
+    try {
+        const res = await fetch(`${REGISTRY_API_URL}/skills/${lowerQuery}`);
+        if (res.ok) {
+            return await res.json() as SkillDefinition;
+        }
+        // If 404, might be a search query not an ID, proceed to search or local
+    } catch (e) {
+        // API failed, fallback
+    }
+
+    // 2. Fallback to Full Registry (Cache/Bundled)
+    const registry = await _getRegistry();
     return registry.find(
         (skill) =>
             skill.id.toLowerCase() === lowerQuery ||
@@ -145,10 +174,27 @@ export async function findSkill(query: string): Promise<SkillDefinition | undefi
 }
 
 /**
- * Search skills by query (matches name or description).
+ * Search skills by query.
+ * 1. Try Remote API Search
+ * 2. Fallback to full registry filter
  */
 export async function searchRegistry(query: string): Promise<SkillDefinition[]> {
-    const registry = await getRegistry();
+    // 1. Try API Search
+    try {
+        // limit=50 for CLI search
+        const res = await fetch(`${REGISTRY_API_URL}/search?q=${encodeURIComponent(query)}&limit=50`);
+        if (res.ok) {
+            const data = (await res.json()) as { skills?: SkillDefinition[] };
+            if (data.skills) {
+                return data.skills as SkillDefinition[];
+            }
+        }
+    } catch (e) {
+        // API failed, fallback
+    }
+
+    // 2. Fallback: Filter local/cached registry
+    const registry = await _getRegistry();
     const lowerQuery = query.toLowerCase();
 
     return registry.filter(
