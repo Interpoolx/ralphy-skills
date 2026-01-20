@@ -42,7 +42,6 @@ function SubmissionsPage() {
 
     // State for Modals
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Confirmation Modal State
     const [confirmModal, setConfirmModal] = useState<{

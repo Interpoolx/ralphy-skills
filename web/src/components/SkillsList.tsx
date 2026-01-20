@@ -55,7 +55,7 @@ export function SkillsList({
     }, [data])
 
     const providers = useMemo(() => {
-        return [...new Set(data.skills.map((s) => s.author?.name).filter(Boolean))]
+        return [...new Set(data.skills.map((s) => typeof s.author === 'string' ? s.author : s.author?.name).filter(Boolean))]
     }, [data])
 
     const totalPages = Math.ceil(totalCount / limit)
@@ -179,7 +179,7 @@ export function SkillsList({
                                 </p>
 
                                 <div className="mt-4 flex flex-wrap gap-2">
-                                    {skill.tags?.slice(0, 3).map(tag => (
+                                    {(Array.isArray(skill.tags) ? skill.tags : (skill.tags as string || '').split(',').filter(Boolean)).slice(0, 3).map((tag: string) => (
                                         <span key={tag} className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
                                             {tag}
                                         </span>
@@ -188,7 +188,7 @@ export function SkillsList({
                             </div>
                             <div className="bg-gray-50 px-6 py-3 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100">
                                 <div>
-                                    by <span className="font-medium text-gray-900">{skill.author?.name || 'Unknown'}</span>
+                                    by <span className="font-medium text-gray-900">{typeof skill.author === 'string' ? skill.author : (skill.author?.name || 'Unknown')}</span>
                                 </div>
                                 {skill.downloads && (
                                     <div>
