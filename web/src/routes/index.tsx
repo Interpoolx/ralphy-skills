@@ -198,7 +198,23 @@ function Index() {
                         </p>
                     </div>
                     {data ? (
-                        <SkillsList data={data} />
+                        <SkillsList
+                            data={data}
+                            hideControls={true}
+                            isLoading={false}
+                            totalCount={data.skills.length}
+                            currentPage={0}
+                            limit={25}
+                            onPageChange={() => { }}
+                            searchQuery=""
+                            onSearchChange={() => { }}
+                            category={null}
+                            onCategoryChange={() => { }}
+                            provider={null}
+                            onProviderChange={() => { }}
+                            sort="installed"
+                            onSortChange={() => { }}
+                        />
                     ) : (
                         <div className="flex justify-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>

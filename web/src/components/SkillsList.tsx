@@ -16,7 +16,8 @@ export function SkillsList({
     provider,
     onProviderChange,
     sort,
-    onSortChange
+    onSortChange,
+    hideControls = false
 }: {
     data: MarketplaceData
     isLoading: boolean
@@ -32,6 +33,7 @@ export function SkillsList({
     onProviderChange: (p: string | null) => void
     sort: string
     onSortChange: (s: string) => void
+    hideControls?: boolean
 }) {
     // Unique values from current page data is insufficient for global filters,
     // but without a global stats prop passed down, we rely on what we have or external props.
@@ -61,71 +63,73 @@ export function SkillsList({
     return (
         <div className="space-y-8">
             {/* Filters & Search */}
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                    <div className="relative w-full sm:w-96">
-                        <input
-                            type="text"
-                            placeholder="Search skills..."
-                            value={searchQuery}
-                            onChange={(e) => onSearchChange(e.target.value)}
-                            className="w-full rounded-lg border-0 py-2.5 pl-4 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                        />
+            {!hideControls && (
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                        <div className="relative w-full sm:w-96">
+                            <input
+                                type="text"
+                                placeholder="Search skills..."
+                                value={searchQuery}
+                                onChange={(e) => onSearchChange(e.target.value)}
+                                className="w-full rounded-lg border-0 py-2.5 pl-4 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                            />
+                        </div>
+
+                        <div className="flex gap-4 w-full sm:w-auto">
+                            <select
+                                value={provider || ''}
+                                onChange={(e) => onProviderChange(e.target.value || null)}
+                                className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                            >
+                                <option value="">All Providers</option>
+                                {providers.map((p) => (
+                                    <option key={p} value={p as string}>{p}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={sort}
+                                onChange={(e) => onSortChange(e.target.value)}
+                                className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                            >
+                                <option value="installed">Most Installed</option>
+                                <option value="recent">Recently Added</option>
+                                <option value="name">Name</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div className="flex gap-4 w-full sm:w-auto">
-                        <select
-                            value={provider || ''}
-                            onChange={(e) => onProviderChange(e.target.value || null)}
-                            className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                        >
-                            <option value="">All Providers</option>
-                            {providers.map((p) => (
-                                <option key={p} value={p as string}>{p}</option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={sort}
-                            onChange={(e) => onSortChange(e.target.value)}
-                            className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                        >
-                            <option value="installed">Most Installed</option>
-                            <option value="recent">Recently Added</option>
-                            <option value="name">Name</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => onCategoryChange(null)}
-                            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === null
-                                ? 'bg-indigo-600 text-white shadow-sm'
-                                : 'bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300'
-                                }`}
-                        >
-                            All
-                        </button>
-                        {categories.map((cat) => (
+                    <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
                             <button
-                                key={cat}
-                                onClick={() => onCategoryChange(cat)}
-                                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === cat
+                                onClick={() => onCategoryChange(null)}
+                                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === null
                                     ? 'bg-indigo-600 text-white shadow-sm'
                                     : 'bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300'
                                     }`}
                             >
-                                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                All
                             </button>
-                        ))}
-                    </div>
-                    <div className="text-sm text-gray-500 hidden sm:block">
-                        {totalCount} skills found
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => onCategoryChange(cat)}
+                                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${category === cat
+                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        : 'bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300'
+                                        }`}
+                                >
+                                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="text-sm text-gray-500 hidden sm:block">
+                            {totalCount} skills found
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
